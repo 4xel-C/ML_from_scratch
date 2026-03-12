@@ -9,8 +9,7 @@
 The goal of this repository is to **re-implement popular machine learning algorithms from scratch**, without relying on high-level libraries such as scikit-learn or PyTorch for the core logic. Each implementation serves as a hands-on exercise to:
 
 - **Strengthen mathematical foundations** — linear algebra, calculus, probability and statistics.
-- **Develop a deep understanding** of how each algorithm works internally, rather than treating it as a black box.
-- **Build intuition** about hyperparameters, convergence, and the trade-offs of different approaches.
+- **Develop a deep understanding** of how each algorithm works internally.
 
 Implementations are written in **Python**, using only low-level numerical libraries (e.g. NumPy) so that the focus remains on the algorithm itself.
 
@@ -51,13 +50,6 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 # Install dependencies
 pip install numpy
 ```
-
----
-
-## 🤝 Contributing
-
-Contributions, corrections, and suggestions are welcome! Feel free to open an issue or submit a pull request.
-
 ---
 
 ## 📄 License

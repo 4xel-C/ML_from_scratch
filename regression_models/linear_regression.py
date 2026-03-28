@@ -7,7 +7,7 @@ Equation : Ypred = X.w (bias added to the beginning of w with a virtual column o
 """
 
 import numpy as np
-from numpy.typing import ArrayLike, NDArray
+from numpy.typing import NDArray
 
 from loss_functions import mse
 

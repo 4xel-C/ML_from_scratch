@@ -9,10 +9,8 @@ Equation : Ypred = X.w (bias added to the beginning of w with a virtual column o
 import numpy as np
 from numpy.typing import NDArray
 
-from loss_functions import mse
-
-
-class NotFittedException(Exception): ...
+from helpers import NotFittedException
+from loss_functions import gradient_mse, mse
 
 
 class LinearRegression:
@@ -55,7 +53,7 @@ class LinearRegression:
             loss = mse(predictions, y)
 
             # gradient calculation
-            dw = 0.5 / n * np.dot((predictions - y), X_b)
+            dw = gradient_mse(X_b, predictions, y)
             step_size = self.learning_rate * dw
 
             # updating the parameters

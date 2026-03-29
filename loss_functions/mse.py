@@ -8,3 +8,7 @@ def mse(y_pred: NDArray, y_true: NDArray) -> float:
     y_pred_arr = np.asarray(y_pred, dtype=np.float64)
     y_true_arr = np.asarray(y_true, dtype=np.float64)
     return float(np.mean((y_pred_arr - y_true_arr) ** 2))
+
+
+def gradient_mse(X: NDArray, y_pred: NDArray, y_true: NDArray):
+    return (0.5 / X.shape[0]) * (np.dot((y_pred - y_true), X))

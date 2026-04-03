@@ -1,11 +1,8 @@
-"""Implementation of the linear regression using lasso as regularization method
-Same as the linear regression, but adapting the lasso regularization to the loss function
-L = MSE + lambda . |w|
+"""Implementation of the linear regression using ridge as regularization method
+Same as the linear regression, but adapting the ridge regularization to the loss function
+L = MSE + lambda . ||w||^2
 
-|w| derivative correspond to the sign of w:
-    if w > 0: |w| = w and d|w|/dw = 1
-    if w < 0: |w| = -w and d|w|/dw = -1
-    corner case if |w| = 0: not possible -> return 0
+The derivative of the L2 norm is 2w. The factor 2, being absorbed by the regularization term lambda
 """
 
 import numpy as np
@@ -15,7 +12,7 @@ from loss_functions import gradient_mse, mse
 from regression_models.linear_regression import LinearRegression
 
 
-class Lasso(LinearRegression):
+class Ridge(LinearRegression):
     def __init__(
         self, max_iterations: int = 1000, learning_rate: float = 0.01, l: float = 1
     ):
@@ -41,7 +38,7 @@ class Lasso(LinearRegression):
 
             # compute the gradient (avoid computing the penalization for the bias term)
             gradient = gradient_mse(X_b, prediction, y)
-            gradient[1:] += self.l * np.sign(self.w[1:])
+            gradient[1:] += self.l * self.w[1:]
 
             # update the weights
             self.w = self.w - (self.learning_rate * gradient)

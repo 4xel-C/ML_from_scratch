@@ -42,8 +42,30 @@ class DecisionTreeRegressor:
 
         self.tree = self._build_tree(X, y, root_node)
 
-    # TODO: To be implemented
-    def predict(self, X): ...
+    def predict(self, X):
+        return np.apply_along_axis(lambda x: self._traverse(x, self.tree), 1, X)
+
+    def _traverse(self, x: NDArray, node: Node) -> float:
+        """Function to recursively traverse the tree until a leaf is reached
+
+        Args:
+            x (_type_): One data point
+            node (_type_): Node of the tree
+        """
+
+        if node.value is not None:
+            return node.value
+
+        x_value = x[node.feature_idx]
+
+        if x_value < node.threshold:
+            assert node.left is not None
+            result = self._traverse(x, node.left)
+        else:
+            assert node.right is not None
+            result = self._traverse(x, node.right)
+
+        return result
 
     def _build_tree(self, X, y, node: Node) -> Node:
         # If we reach the max depth of not enough samples to split, we are in a leaf
@@ -71,7 +93,10 @@ class DecisionTreeRegressor:
             return node
 
         # check variance improvement
-        delta_var = np.var(y) - (np.var(y_left) + np.var(y_right))
+        delta_var = np.var(y) - (
+            (len(y_left) / len(y)) * np.var(y_left)
+            + (len(y_right) / len(y)) * np.var(y_right)
+        )
 
         # If not enough gain, we have a leaf node
         if delta_var < self.min_variance:

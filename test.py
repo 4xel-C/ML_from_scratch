@@ -1,9 +1,11 @@
 import numpy as np
-from sklearn.datasets import make_classification
-from sklearn.metrics import accuracy_score
+from sklearn.datasets import make_classification, make_regression
+from sklearn.metrics import accuracy_score, mean_squared_error
 from sklearn.naive_bayes import CategoricalNB, GaussianNB
+from sklearn.tree import DecisionTreeRegressor as SklearnDTR
 
 from classification_models import NaiveBayes
+from regression_models import DecisionTreeRegressor
 
 # ─────────────────────────────────────────────
 # TEST 1 : Features purement continues (comme avant)
@@ -73,3 +75,24 @@ print()
 print(
     "Note : ton modèle combine les deux — il devrait faire mieux que chacun séparément."
 )
+
+# ─────────────────────────────────────────────
+# TEST 3 : Decision Tree Regressor
+# ─────────────────────────────────────────────
+print()
+print("=" * 50)
+print("TEST 3 : Decision Tree Regressor")
+print("=" * 50)
+
+X_reg, y_reg = make_regression(n_samples=300, n_features=5, noise=10, random_state=42)
+
+model_dt = DecisionTreeRegressor(max_depth=5)
+model_dt.fit(X_reg, y_reg)
+preds_dt = model_dt.predict(X_reg)
+
+sk_dt = SklearnDTR(max_depth=5)
+sk_dt.fit(X_reg, y_reg)
+sk_preds_dt = sk_dt.predict(X_reg)
+
+print(f"Ton MSE    : {mean_squared_error(y_reg, preds_dt):.4f}")
+print(f"Sklearn MSE: {mean_squared_error(y_reg, sk_preds_dt):.4f}")

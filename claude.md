@@ -22,6 +22,8 @@ Chaque implémentation suit ce processus :
 - Valide chaque étape avant de passer à la suivante
 
 ### Ce que l'apprenant doit faire
+- Donner l'algorithme et les formules à utiliser
+- Décomposer le fonctionnement
 - Réfléchir aux **dimensions** (shapes) avant d'écrire du code
 - Dériver les **gradients** à la main
 - Tester son implémentation contre **sklearn**
@@ -132,8 +134,8 @@ Chaque implémentation suit ce processus :
 
 ---
 
-### 7. Naive Bayes Gaussien
-**Type** : Supervisé — Classification  
+### 7. Naive Bayes Gaussien (+ Catégoriel mixte)
+**Type** : Supervisé — Classification
 **Fichier** : `classification_models/naive_bayes.py`
 
 **Concepts clés**
@@ -142,8 +144,15 @@ Chaque implémentation suit ce processus :
 - Vraisemblance gaussienne : $\log P(x_j \mid y=k) = -\frac{1}{2}\log(2\pi\sigma^2) - \frac{(x-\mu)^2}{2\sigma^2}$
 - Log-posterior : $\log P(y=k) + \sum_j \log P(x_j \mid y=k)$
 
-**`fit`** : calculer prior, moyennes et variances par classe  
+**`fit`** : calculer prior, moyennes et variances par classe
 **`predict`** : calculer log-posterior vectorisé, `argmax` sur les classes
+
+**Extension : features mixtes (continues + catégorielles)**
+- Paramètre optionnel `categorical_features` : masque booléen sur les colonnes catégorielles
+- Features catégorielles : loi **Categorical** — proportions par modalité et par classe
+- **Laplace smoothing** : $P(c \mid y=k) = \frac{count(c,k) + \alpha}{N_k + \alpha \cdot |\mathcal{V}|}$ pour éviter les probabilités nulles
+- Stockage : `defaultdict(lambda: defaultdict(dict))` — `proportions[feature_idx][class][modalité]`
+- Log-posterior final = contribution gaussienne (continues) + log-proportion (catégorielles)
 
 ---
 

@@ -1,8 +1,16 @@
+import numpy as np
 from sklearn.datasets import make_classification
 from sklearn.metrics import accuracy_score
-from sklearn.naive_bayes import GaussianNB
+from sklearn.naive_bayes import CategoricalNB, GaussianNB
 
 from classification_models import NaiveBayes
+
+# ─────────────────────────────────────────────
+# TEST 1 : Features purement continues (comme avant)
+# ─────────────────────────────────────────────
+print("=" * 50)
+print("TEST 1 : Features continues uniquement")
+print("=" * 50)
 
 X, y = make_classification(n_samples=300, n_features=4, random_state=42)
 
@@ -16,3 +24,52 @@ sk_preds = sk.predict(X)
 
 print(f"Ton accuracy    : {accuracy_score(y, preds):.4f}")
 print(f"Sklearn accuracy: {accuracy_score(y, sk_preds):.4f}")
+
+# ─────────────────────────────────────────────
+# TEST 2 : Features mixtes (continues + catégorielles)
+# ─────────────────────────────────────────────
+print()
+print("=" * 50)
+print("TEST 2 : Features mixtes")
+print("=" * 50)
+
+np.random.seed(42)
+n = 500
+
+# 2 features continues
+X_cont = np.random.randn(n, 2)
+
+# 2 features catégorielles (entiers représentant des catégories)
+X_cat_1 = np.random.randint(0, 3, size=(n, 1))  # 3 modalités
+X_cat_2 = np.random.randint(0, 4, size=(n, 1))  # 4 modalités
+
+X_mixed = np.hstack([X_cont, X_cat_1, X_cat_2])
+
+# Labels : influencés par les features continues
+y_mixed = (X_cont[:, 0] + X_cont[:, 1] + np.random.randn(n) * 0.5 > 0).astype(int)
+
+# Masque booléen : False=continue, True=catégorielle
+cat_mask = np.array([False, False, True, True])
+
+# Ton modèle
+model_mixed = NaiveBayes()
+model_mixed.fit(X_mixed, y_mixed, categorical_features=cat_mask)
+preds_mixed = model_mixed.predict(X_mixed)
+
+# Sklearn : GaussianNB sur les continues + CategoricalNB sur les catégorielles
+# (comparaison approximative — sklearn n'a pas de modèle mixte natif)
+sk_gauss = GaussianNB()
+sk_gauss.fit(X_cont, y_mixed)
+sk_preds_cont = sk_gauss.predict(X_cont)
+
+sk_cat = CategoricalNB()
+sk_cat.fit(X_mixed[:, 2:].astype(int), y_mixed)
+sk_preds_cat = sk_cat.predict(X_mixed[:, 2:].astype(int))
+
+print(f"Ton accuracy (mixte)         : {accuracy_score(y_mixed, preds_mixed):.4f}")
+print(f"Sklearn GaussianNB (continu) : {accuracy_score(y_mixed, sk_preds_cont):.4f}")
+print(f"Sklearn CategoricalNB (cat)  : {accuracy_score(y_mixed, sk_preds_cat):.4f}")
+print()
+print(
+    "Note : ton modèle combine les deux — il devrait faire mieux que chacun séparément."
+)

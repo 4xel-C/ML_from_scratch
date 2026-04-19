@@ -6,20 +6,10 @@ from typing import Optional, Tuple
 import numpy as np
 from numpy.typing import NDArray
 
-
-@dataclass
-class Node:
-    """Node of the decision tree"""
-
-    level: int  # The level in the tree
-    feature_idx: int  # The feature index on which the rule is created
-    threshold: float  # The value of the threshold to split the data on
-    left: Optional[Node] = None  # Left node in the tree
-    right: Optional[Node] = None  # Right node in the tree
-    value: Optional[float] = None  # The mean value stored in the leaf for y
+from bases import DecisionTreeBase, Node
 
 
-class DecisionTreeRegressor:
+class DecisionTreeRegressor(DecisionTreeBase):
     def __init__(
         self,
         max_depth: int = 5,
@@ -27,54 +17,23 @@ class DecisionTreeRegressor:
         min_samples_leaf: int = 1,
         min_variance: float = 1e-4,
     ):
-        self.max_depth = max_depth
-        self.min_samples_split = min_samples_split
-        self.min_samples_leaf = min_samples_leaf
-        self.min_variance = min_variance
-
-    def fit(self, X, y):
-        # Get the first split
-        root_node: Node = Node(
-            level=0,
-            feature_idx=0,  # placeholder value
-            threshold=0,  # Placeholder value
+        super().__init__(
+            max_depth=max_depth,
+            min_samples_split=min_samples_split,
+            min_samples_leaf=min_samples_leaf,
         )
 
-        self.tree = self._build_tree(X, y, root_node)
-
-    def predict(self, X):
-        return np.apply_along_axis(lambda x: self._traverse(x, self.tree), 1, X)
-
-    def _traverse(self, x: NDArray, node: Node) -> float:
-        """Function to recursively traverse the tree until a leaf is reached
-
-        Args:
-            x (_type_): One data point
-            node (_type_): Node of the tree
-        """
-
-        if node.value is not None:
-            return node.value
-
-        x_value = x[node.feature_idx]
-
-        if x_value < node.threshold:
-            assert node.left is not None
-            result = self._traverse(x, node.left)
-        else:
-            assert node.right is not None
-            result = self._traverse(x, node.right)
-
-        return result
+        # Variance for regression
+        self.min_variance = min_variance
 
     def _build_tree(self, X, y, node: Node) -> Node:
         # If we reach the max depth of not enough samples to split, we are in a leaf
         if node.level == self.max_depth or len(X) < self.min_samples_split:
-            node.value = np.mean(y)
+            node.value = float(np.mean(y))
             return node
 
         # Create the split
-        node.feature_idx, node.threshold = self._best_split(X, y)
+        node.feature_idx, node.threshold, splitted_variance = self._best_split(X, y)
 
         # Split the data
         left_data_idx = X[:, node.feature_idx] < node.threshold
@@ -89,18 +48,15 @@ class DecisionTreeRegressor:
         # Check if we can have enough samples in the potential leaves
         if len(X_left) < self.min_samples_leaf or len(X_right) < self.min_samples_leaf:
             # we have a leaf
-            node.value = np.mean(y)
+            node.value = float(np.mean(y))
             return node
 
         # check variance improvement
-        delta_var = np.var(y) - (
-            (len(y_left) / len(y)) * np.var(y_left)
-            + (len(y_right) / len(y)) * np.var(y_right)
-        )
+        delta_var = np.var(y) - splitted_variance
 
         # If not enough gain, we have a leaf node
         if delta_var < self.min_variance:
-            node.value = np.mean(y)
+            node.value = float(np.mean(y))
             return node
 
         # initialize left and right node
@@ -127,7 +83,7 @@ class DecisionTreeRegressor:
         # return the node after updating left and right branch
         return node
 
-    def _best_split(self, X, y) -> Tuple[int, float]:
+    def _best_split(self, X, y) -> Tuple[int, float, float]:
         # Get the best first feature to split on: for each featture, find the point or the category where we minimize the variance of y
         # Get the feature giving the smallest intraclass variance (minimize intraclass variability)
         intra_class_variance = np.zeros(
@@ -165,5 +121,6 @@ class DecisionTreeRegressor:
 
         best_feature = int(np.argmin(intra_class_variance[:, 0]))
         best_split = intra_class_variance[best_feature, 1]
+        min_var = intra_class_variance[best_feature, 0]
 
-        return best_feature, best_split
+        return best_feature, best_split, min_var

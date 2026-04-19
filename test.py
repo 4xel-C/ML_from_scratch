@@ -1,10 +1,13 @@
 import numpy as np
 from sklearn.datasets import make_classification, make_regression
+from sklearn.datasets import load_iris
 from sklearn.metrics import accuracy_score, mean_squared_error
+from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import CategoricalNB, GaussianNB
+from sklearn.tree import DecisionTreeClassifier as SklearnDTC
 from sklearn.tree import DecisionTreeRegressor as SklearnDTR
 
-from classification_models import NaiveBayes
+from classification_models import DecisionTreeClassifier, NaiveBayes
 from regression_models import DecisionTreeRegressor
 
 # ─────────────────────────────────────────────
@@ -96,3 +99,25 @@ sk_preds_dt = sk_dt.predict(X_reg)
 
 print(f"Ton MSE    : {mean_squared_error(y_reg, preds_dt):.4f}")
 print(f"Sklearn MSE: {mean_squared_error(y_reg, sk_preds_dt):.4f}")
+
+# ─────────────────────────────────────────────
+# TEST 4 : Decision Tree Classifier
+# ─────────────────────────────────────────────
+print()
+print("=" * 50)
+print("TEST 4 : Decision Tree Classifier")
+print("=" * 50)
+
+X_iris, y_iris = load_iris(return_X_y=True)
+X_train, X_test, y_train, y_test = train_test_split(X_iris, y_iris, random_state=42)
+
+model_clf = DecisionTreeClassifier(max_depth=5)
+model_clf.fit(X_train, y_train)
+preds_clf = model_clf.predict(X_test)
+
+sk_clf = SklearnDTC(max_depth=5)
+sk_clf.fit(X_train, y_train)
+sk_preds_clf = sk_clf.predict(X_test)
+
+print(f"Ton accuracy    : {accuracy_score(y_test, preds_clf):.4f}")
+print(f"Sklearn accuracy: {accuracy_score(y_test, sk_preds_clf):.4f}")

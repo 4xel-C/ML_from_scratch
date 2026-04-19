@@ -1,4 +1,4 @@
-from regression_models.decision_tree import DecisionTreeRegressor
+from regression_models.decision_tree_regressor import DecisionTreeRegressor
 from regression_models.lasso import Lasso
 from regression_models.linear_regression import LinearRegression
 from regression_models.ridge import Ridge

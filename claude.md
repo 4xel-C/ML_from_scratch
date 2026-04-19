@@ -168,10 +168,57 @@ Chaque implémentation suit ce processus :
 
 ---
 
+---
+
+### 8. Decision Tree Regressor
+**Type** : Supervisé — Régression
+**Fichier** : `regression_models/decision_tree.py`
+
+**Concepts clés**
+- Construction récursive : `_build_tree` appelle `_best_split` puis se rappelle sur les sous-arbres gauche et droit
+- Critère de split : minimiser la **variance pondérée** des deux groupes
+  `variance_split = (n_left/n) * var(y_left) + (n_right/n) * var(y_right)`
+- Gain de variance : `delta_var = var(y) - variance_split` — doit être > `min_variance`
+- Prédiction en feuille : **moyenne de y** des points du nœud
+- Traversée : `_traverse(x, node)` récursif, `np.apply_along_axis` pour vectoriser sur X
+
+**Conditions d'arrêt**
+- `node.level == max_depth`
+- `len(X) < min_samples_split`
+- `len(X_left) < min_samples_leaf` ou `len(X_right) < min_samples_leaf`
+- `delta_var < min_variance`
+
+**Structure de données**
+- `@dataclass Node` avec `left`, `right`, `value` optionnels
+- `from __future__ import annotations` pour l'auto-référencement dans le dataclass
+
+---
+
+### 9. Decision Tree Classifier
+**Type** : Supervisé — Classification
+**Fichier** : `classification_models/decision_tree_classifier.py`
+**Hérite de** : `DecisionTreeBase` (dans `bases/`)
+
+**Concepts clés**
+- Même structure récursive que le Regressor
+- Critère de split : minimiser le **Gini pondéré** des deux groupes
+  `Gini_split = (n_left/n) * Gini(y_left) + (n_right/n) * Gini(y_right)`
+- Impureté de Gini : $Gini = 1 - \sum_k p_k^2$ — vaut 0 si nœud pur, 0.5 si 50/50
+- Gain de Gini : `delta = Gini(parent) - Gini_split` — doit être > `min_gini`
+- Valeur en feuille : **mode de y** (classe la plus fréquente) via `np.unique` + `argmax`
+
+**Différence clé avec le Regressor**
+| | Regressor | Classifier |
+|---|---|---|
+| Critère de split | Variance pondérée | Gini pondéré |
+| Valeur en feuille | Moyenne de y | Mode de y |
+
+---
+
 ## Prochains algorithmes suggérés
 
 ### Niveau 2
-- **Decision Tree** — récursivité, Gini/Entropy
+- **Decision Tree Classifier** — même structure, critère Gini/Entropy ✅
 - **PCA** — réduction de dimension, valeurs propres
 - **DBSCAN** — clustering par densité
 

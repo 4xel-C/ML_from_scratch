@@ -1,6 +1,6 @@
 import numpy as np
-from sklearn.datasets import make_classification, make_regression
-from sklearn.datasets import load_iris
+from sklearn.datasets import load_iris, make_classification, make_regression
+from sklearn.decomposition import PCA as SklearnPCA
 from sklearn.metrics import accuracy_score, mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import CategoricalNB, GaussianNB
@@ -8,6 +8,7 @@ from sklearn.tree import DecisionTreeClassifier as SklearnDTC
 from sklearn.tree import DecisionTreeRegressor as SklearnDTR
 
 from classification_models import DecisionTreeClassifier, NaiveBayes
+from dimensionality_reduction import PCA
 from regression_models import DecisionTreeRegressor
 
 # ─────────────────────────────────────────────
@@ -121,3 +122,25 @@ sk_preds_clf = sk_clf.predict(X_test)
 
 print(f"Ton accuracy    : {accuracy_score(y_test, preds_clf):.4f}")
 print(f"Sklearn accuracy: {accuracy_score(y_test, sk_preds_clf):.4f}")
+
+# ─────────────────────────────────────────────
+# TEST 5 : PCA
+# ─────────────────────────────────────────────
+print()
+print("=" * 50)
+print("TEST 5 : PCA")
+print("=" * 50)
+
+X_pca, _ = load_iris(return_X_y=True)
+
+pca = PCA(n_components=2)
+pca.fit(X_pca)
+X_custom = pca.transform(X_pca)
+
+pca_sk = SklearnPCA(n_components=2)
+X_sklearn = pca_sk.fit_transform(X_pca)
+
+print(f"Shape custom : {X_custom.shape}")
+print(f"Shape sklearn: {X_sklearn.shape}")
+print(f"\nCustom  (5 premiers):\n{X_custom[:5].real}")
+print(f"\nSklearn (5 premiers):\n{X_sklearn[:5]}")

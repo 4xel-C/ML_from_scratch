@@ -18,6 +18,7 @@ Chaque implémentation suit ce processus :
 - Pose des **questions** plutôt que de donner les réponses directement
 - Signale les bugs **sans les corriger** — juste des indices
 - Demande de **dériver les formules** avant de coder
+- Ne donne des **indices** que si l'apprenant est explicitement bloqué — laisser chercher d'abord
 - Encourage la **vectorisation NumPy** plutôt que les boucles Python
 - Valide chaque étape avant de passer à la suivante
 
@@ -215,11 +216,40 @@ Chaque implémentation suit ce processus :
 
 ---
 
+---
+
+### 10. PCA (Analyse en Composantes Principales)
+**Type** : Non supervisé — Réduction de dimension
+**Fichier** : `dimensionality_reduction/pca.py`
+
+**Concepts clés**
+- Objectif : projeter X (n, p) sur k directions qui maximisent la variance
+- Centrage : X_norm = X - mean(X)
+- Matrice de covariance : C = (1/n) * X_norm^T . X_norm
+- Décomposition spectrale : C = V * Lambda * V^T
+- Tri des vecteurs propres par valeur propre décroissante
+- Projection : X_reduit = X_centré . V_k — shape (n, k)
+
+**Pipeline**
+1. Centrer X
+2. Calculer C = (1/n) * X^T . X
+3. Décomposition spectrale -> valeurs propres + vecteurs propres
+4. Trier par valeur propre décroissante, garder les k premiers
+5. Projeter : X_reduit = X . V_k
+
+**Points importants**
+- Les vecteurs propres sont définis à un signe près — signe différent de sklearn est normal
+- `np.linalg.eig` retourne les vecteurs propres en colonnes
+- `fit` stocke `self.means` et `self.eigen_vectors` (shape p, k)
+- `transform` centre puis projette les nouvelles données
+
+---
+
 ## Prochains algorithmes suggérés
 
 ### Niveau 2
 - **Decision Tree Classifier** — même structure, critère Gini/Entropy ✅
-- **PCA** — réduction de dimension, valeurs propres
+- **PCA** — réduction de dimension, valeurs propres ✅
 - **DBSCAN** — clustering par densité
 
 ### Niveau 3

@@ -16,8 +16,11 @@ class PCA:
         # Compute covariance matrix
         cov_matrix = (1 / X.shape[0]) * X_norm.T @ X_norm
 
-        # decomposition en valeur spectral
+        # eigen decomposition
         eigen_values, eigen_vectors = np.linalg.eig(cov_matrix)
+
+        # keep the total inertia
+        self.total_inertia = eigen_values.sum()
 
         # sort the vectors
         order_indices = eigen_values.argsort()[::-1]
@@ -36,3 +39,6 @@ class PCA:
         z = X_centered @ self.eigen_vectors
 
         return z
+
+    def explained_variance_ratio(self):
+        return self.eigen_values / self.total_inertia

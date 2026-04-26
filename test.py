@@ -1,13 +1,14 @@
 import numpy as np
 from sklearn.datasets import load_iris, make_classification, make_regression
 from sklearn.decomposition import PCA as SklearnPCA
+from sklearn.ensemble import RandomForestClassifier as SklearnRFC
 from sklearn.metrics import accuracy_score, mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import CategoricalNB, GaussianNB
 from sklearn.tree import DecisionTreeClassifier as SklearnDTC
 from sklearn.tree import DecisionTreeRegressor as SklearnDTR
 
-from classification_models import DecisionTreeClassifier, NaiveBayes
+from classification_models import DecisionTreeClassifier, NaiveBayes, RandomForest
 from dimensionality_reduction import PCA
 from regression_models import DecisionTreeRegressor
 
@@ -144,3 +145,27 @@ print(f"Shape custom : {X_custom.shape}")
 print(f"Shape sklearn: {X_sklearn.shape}")
 print(f"\nCustom  (5 premiers):\n{X_custom[:5].real}")
 print(f"\nSklearn (5 premiers):\n{X_sklearn[:5]}")
+
+# ─────────────────────────────────────────────
+# TEST 6 : Random Forest Classifier
+# ─────────────────────────────────────────────
+print()
+print("=" * 50)
+print("TEST 6 : Random Forest Classifier")
+print("=" * 50)
+
+X_rf, y_rf = make_classification(n_samples=500, n_features=10, random_state=42)
+X_train_rf, X_test_rf, y_train_rf, y_test_rf = train_test_split(
+    X_rf, y_rf, test_size=0.2, random_state=42
+)
+
+rf = RandomForest(n_estimators=100, max_depth=20)
+rf.fit(X_train_rf, y_train_rf)
+preds_rf = rf.predict(X_test_rf)
+
+sk_rf = SklearnRFC(n_estimators=100, max_depth=20, random_state=42)
+sk_rf.fit(X_train_rf, y_train_rf)
+sk_preds_rf = sk_rf.predict(X_test_rf)
+
+print(f"Ton accuracy    : {accuracy_score(y_test_rf, preds_rf):.4f}")
+print(f"Sklearn accuracy: {accuracy_score(y_test_rf, sk_preds_rf):.4f}")

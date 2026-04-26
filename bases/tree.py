@@ -21,7 +21,6 @@ class Node:
 
 
 class DecisionTreeBase(ABC):
-    # TODO: move the min_variance parameter
     def __init__(
         self,
         max_depth: int = 5,

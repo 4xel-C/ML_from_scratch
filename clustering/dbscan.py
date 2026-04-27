@@ -2,7 +2,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 
-class HDBScan:
+class DBScan:
     def __init__(self, epsilon: float = 1, min_samples: int = 4):
         self.epsilon = epsilon
         self.min_samples = min_samples
@@ -36,7 +36,7 @@ class HDBScan:
                 clusters[idx] = cluster_number
 
                 # Expand the node
-                neighbors_indices = np.where(core_point <= self.epsilon)
+                neighbors_indices = np.where(core_point <= self.epsilon)[0]
 
                 for neighbor_index in neighbors_indices:
                     neighbor = dist_matrix[neighbor_index]
@@ -54,7 +54,7 @@ class HDBScan:
         return clusters
 
     def _is_core(self, point: NDArray):
-        if len(point[point <= self.epsilon]) < self.min_samples:
+        if len(point[(point <= self.epsilon) & (point > 0)]) < self.min_samples:
             return False
         else:
             return True

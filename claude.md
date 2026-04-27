@@ -271,10 +271,35 @@ Chaque implémentation suit ce processus :
 
 ---
 
+---
+
+### 12. DBSCAN
+**Type** : Non supervisé — Clustering  
+**Fichier** : `clustering/dbscan.py`
+
+**Concepts clés**
+- Clustering par **densité** : pas de forme supposée, détecte les outliers nativement
+- Trois types de points : **core** (≥ min_samples voisins dans epsilon), **border** (voisin d'un core mais pas core lui-même), **outlier** (-1)
+- Expansion BFS/DFS depuis chaque core point non visité
+
+**Pipeline**
+1. Calculer la matrice de distances (n, n) vectorisée
+2. Pour chaque point non assigné : vérifier s'il est core (`_is_core`)
+3. Si core : empiler et étendre — ajouter les voisins core au stack, les voisins border directement au cluster
+4. Incrémenter `cluster_number` après chaque cluster complet
+
+**Points importants**
+- `np.where(point <= epsilon)[0]` — le `[0]` est indispensable (np.where retourne un tuple)
+- `_is_core` exclut le point lui-même : `(point <= epsilon) & (point > 0)`
+- Cohérence : même condition `<=` dans `_is_core` et dans l'expansion
+- Outliers = points jamais atteints par une expansion (restent à -1)
+
+---
+
 ## Prochains algorithmes suggérés
 
 ### Niveau 2
-- **DBSCAN** — clustering par densité
+- **Gradient Boosting** — boosting séquentiel
 
 ### Niveau 3
 - **Gradient Boosting** — boosting séquentiel

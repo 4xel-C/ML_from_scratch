@@ -37,7 +37,7 @@ class DecisionTreeClassifier(DecisionTreeBase):
 
         # Split the data
         mask_left = X[:, node.feature_idx] < node.threshold
-        mask_right = X[:, node.feature_idx] > node.threshold
+        mask_right = X[:, node.feature_idx] >= node.threshold
 
         X_left, y_left = X[mask_left, :], y[mask_left]
         X_right, y_right = X[mask_right, :], y[mask_right]

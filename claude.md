@@ -245,14 +245,37 @@ Chaque implémentation suit ce processus :
 
 ---
 
+---
+
+### 11. Random Forest
+**Type** : Supervisé — Classification
+**Fichier** : `classification_models/random_forest.py`
+**Dépend de** : `DecisionTreeClassifier`
+
+**Concepts clés**
+- Méthode d'**ensemble** par bagging (Bootstrap AGGregatING)
+- Chaque arbre est entraîné sur un sous-échantillon bootstrap des données (tirage avec remise)
+- Chaque arbre utilise un sous-ensemble aléatoire de features (`max_features = sqrt(p)` par défaut)
+- Prédiction finale : **vote majoritaire** parmi tous les arbres
+
+**Pipeline**
+1. Pour chaque estimateur : tirer n samples avec remise + k features aléatoires
+2. Entraîner un `DecisionTreeClassifier` sur ce sous-ensemble
+3. Stocker `(tree, selected_features)` dans `ensemble_model`
+4. Prédire : récupérer la prédiction de chaque arbre, puis mode par `np.unique` + `argmax`
+
+**Points importants**
+- `max_features` est fixé une seule fois dans `fit` si non spécifié
+- Le stockage sous forme de liste de tuples `(classifier, NDArray)` permet de retrouver les bonnes features à l'inférence
+- La variance du modèle diminue avec le nombre d'arbres (mais le biais reste celui d'un arbre individuel)
+
+---
+
 ## Prochains algorithmes suggérés
 
 ### Niveau 2
-- **Decision Tree Classifier** — même structure, critère Gini/Entropy ✅
-- **PCA** — réduction de dimension, valeurs propres ✅
 - **DBSCAN** — clustering par densité
 
 ### Niveau 3
-- **Random Forest** — bagging, ensemble de Decision Trees
 - **Gradient Boosting** — boosting séquentiel
 - **Neural Network** — backpropagation, couches

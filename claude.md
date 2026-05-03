@@ -296,10 +296,44 @@ Chaque implémentation suit ce processus :
 
 ---
 
+---
+
+### 13. AdaBoost
+**Type** : Supervisé — Classification
+**Fichier** : `classification_models/adaboost.py`
+**Dépend de** : `DecisionTreeClassifier` (avec support des poids)
+
+**Concepts clés**
+- Boosting **séquentiel** : chaque estimateur corrige les erreurs du précédent
+- Chaque sample a un poids `w_i` initialisé à `1/n`, mis à jour à chaque itération
+- Poids du modèle : `alpha = 0.5 * log((1 - error) / error)`
+- Mise à jour des poids : `w = w * exp(-alpha * check)` où `check = +1 si correct, -1 si erreur`
+- Normalisation des poids à chaque itération : `w = w / sum(w)`
+
+**Pipeline**
+1. Initialiser `w = 1/n` pour chaque sample
+2. Pour chaque estimateur : entraîner un `DecisionTreeClassifier(max_depth=1)` avec les poids courants
+3. Calculer l'erreur pondérée : `error = sum(w * (pred != y))`
+4. Calculer `alpha[i]`
+5. Mettre à jour et normaliser `w`
+6. Prédire : accumuler `alpha[i]` dans `scores[n_samples, n_classes]`, retourner `argmax`
+
+**Predict multiclasse (SAMME)**
+- `scores` shape `(n_samples, n_classes)` — accumuler `alpha[i]` pour la classe prédite
+- Indexation : `scores[np.arange(n), np.searchsorted(classes, predictions)] += alpha[i]`
+- Résultat : `classes[argmax(scores, axis=1)]`
+
+**Modifications apportées à DecisionTreeClassifier**
+- `fit(X, y, weights)` — poids propagés dans `_build_tree` et `_best_split`
+- Gini pondéré : `sum(w_k) / sum(w)` au lieu de `count_k / n`
+- Valeur en feuille : `find_mode(y, weights)` — classe avec le plus grand poids total
+- Helpers ajoutés : `gini(y, weights)`, `find_mode(y, weights)`, `compute_variance(x, weights)`
+
+---
+
 ## Prochains algorithmes suggérés
 
 ### Niveau 2 — Méthodes d'ensemble (Boosting)
-- **AdaBoost** — boosting séquentiel par pondération des erreurs, point d'entrée au boosting
 - **Gradient Boosting** — généralisation du boosting, s'appuie sur les `DecisionTreeRegressor` existants
 
 ### Niveau 2 — Clustering & Réduction de dimension

@@ -3,7 +3,8 @@ from typing import List
 import numpy as np
 from numpy.typing import NDArray
 
-from classification_models import DecisionTreeClassifier
+from classification_models.decision_tree_classifier import DecisionTreeClassifier
+from helpers import NotFittedException
 
 
 class AdaBoostClassifier:
@@ -12,9 +13,10 @@ class AdaBoostClassifier:
         self.fitted = False
 
         # Declaration of the variables
-        self.estimators: List
+        self.estimators: List[DecisionTreeClassifier]
         self.alpha: NDArray
         self.w: NDArray
+        self.classes: NDArray
 
     def fit(self, X: NDArray, y: NDArray) -> None:
         models = list()
@@ -24,6 +26,8 @@ class AdaBoostClassifier:
         self.w = np.full(
             X.shape[0], 1 / X.shape[0]
         )  # Initialize all equals, normalized to 1
+
+        self.classes = np.unique(y)
 
         for i in range(self.n_estimators):
             # Create the weak learner
@@ -55,3 +59,19 @@ class AdaBoostClassifier:
 
         self.fitted = True
         self.estimators = models
+
+    def predict(self, X) -> NDArray:
+        if not self.fitted:
+            raise NotFittedException()
+
+        scores = np.zeros((len(X), len(self.classes)))
+
+        for i, model in enumerate(self.estimators):
+            predictions = model.predict(X)
+
+            # Update for each sample the score for the predictions
+            scores[np.arange(len(X)), np.searchsorted(self.classes, predictions)] += (
+                self.alpha[i]
+            )
+
+        return self.classes[np.argmax(scores, axis=1)]

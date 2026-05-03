@@ -12,7 +12,7 @@ Features are independant (naive algorithm), the likelihood of a point correspond
 """
 
 from collections import defaultdict
-from typing import Dict, Optional
+from typing import Optional
 
 import numpy as np
 from numpy.typing import NDArray

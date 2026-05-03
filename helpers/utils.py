@@ -35,3 +35,15 @@ def find_mode(y: NDArray, weights: Optional[NDArray] = None):
         wk = counts / y.shape[0]
 
     return classes[np.argmax(wk)]
+
+
+def compute_variance(x: NDArray, weights: Optional[NDArray] = None) -> float:
+    # Generate the uniform weights if no weights proposed
+    if weights is None:
+        weights = np.full_like(x, 1 / len(x))
+
+    mean = np.sum(x * weights) / sum(weights)
+
+    variance = np.sum(weights * (x - mean) ** 2) / sum(weights)
+
+    return variance

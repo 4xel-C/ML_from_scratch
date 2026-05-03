@@ -1,12 +1,12 @@
 from __future__ import annotations  # allow auto referencing class
 
-from dataclasses import dataclass
-from typing import Optional, Tuple
+from typing import Tuple
 
 import numpy as np
 from numpy.typing import NDArray
 
 from bases import DecisionTreeBase, Node
+from helpers import compute_variance
 
 
 class DecisionTreeRegressor(DecisionTreeBase):
@@ -26,14 +26,16 @@ class DecisionTreeRegressor(DecisionTreeBase):
         # Variance for regression
         self.min_variance = min_variance
 
-    def _build_tree(self, X, y, node: Node) -> Node:
+    def _build_tree(self, X, y, node: Node, weights: NDArray) -> Node:
         # If we reach the max depth of not enough samples to split, we are in a leaf
         if node.level == self.max_depth or len(X) < self.min_samples_split:
-            node.value = float(np.mean(y))
+            node.value = float(np.sum(y * weights) / np.sum(weights))
             return node
 
         # Create the split
-        node.feature_idx, node.threshold, splitted_variance = self._best_split(X, y)
+        node.feature_idx, node.threshold, splitted_variance = self._best_split(
+            X, y, weights
+        )
 
         # Split the data
         left_data_idx = X[:, node.feature_idx] < node.threshold
@@ -41,22 +43,24 @@ class DecisionTreeRegressor(DecisionTreeBase):
 
         X_left = X[left_data_idx, :]
         y_left = y[left_data_idx]
+        weights_left = weights[left_data_idx]
 
         X_right = X[right_data_idx, :]
         y_right = y[right_data_idx]
+        weights_right = weights[right_data_idx]
 
         # Check if we can have enough samples in the potential leaves
         if len(X_left) < self.min_samples_leaf or len(X_right) < self.min_samples_leaf:
             # we have a leaf
-            node.value = float(np.mean(y))
+            node.value = float(np.sum(y * weights) / np.sum(weights))
             return node
 
         # check variance improvement
-        delta_var = np.var(y) - splitted_variance
+        delta_var = compute_variance(y, weights) - splitted_variance
 
         # If not enough gain, we have a leaf node
         if delta_var < self.min_variance:
-            node.value = float(np.mean(y))
+            node.value = float(np.sum(y * weights) / np.sum(weights))
             return node
 
         # initialize left and right node
@@ -76,14 +80,14 @@ class DecisionTreeRegressor(DecisionTreeBase):
         )
 
         # Crete the next node
-        node.left = self._build_tree(X_left, y_left, left_node)
+        node.left = self._build_tree(X_left, y_left, left_node, weights_left)
 
-        node.right = self._build_tree(X_right, y_right, right_node)
+        node.right = self._build_tree(X_right, y_right, right_node, weights_right)
 
         # return the node after updating left and right branch
         return node
 
-    def _best_split(self, X, y) -> Tuple[int, float, float]:
+    def _best_split(self, X, y, weights) -> Tuple[int, float, float]:
         # Get the best first feature to split on: for each featture, find the point or the category where we minimize the variance of y
         # Get the feature giving the smallest intraclass variance (minimize intraclass variability)
         intra_class_variance = np.zeros(
@@ -93,10 +97,11 @@ class DecisionTreeRegressor(DecisionTreeBase):
         for feature_idx in range(X.shape[1]):
             feature = X[:, feature_idx]
 
-            # sort the feature
+            # sort the features and weights
             ordered_idx = np.argsort(feature)
             feature = feature[ordered_idx]
             y_sorted = y[ordered_idx]
+            weights_sorted = weights[ordered_idx]
 
             min_split = 0
             min_feature_var = float("inf")
@@ -104,13 +109,16 @@ class DecisionTreeRegressor(DecisionTreeBase):
             # iterate through all values
             for i in range(len(feature) - 1):
                 split = (feature[i + 1] + feature[i]) / 2
-                n = len(y)
-                y_left = y_sorted[np.where(feature < split)]
+                y_left = y_sorted[np.where(feature <= split)]
                 y_right = y_sorted[np.where(feature > split)]
+                weights_left = weights_sorted[np.where(feature <= split)]
+                weights_right = weights_sorted[np.where(feature > split)]
 
-                feature_var = (len(y_left) / n) * np.var(y_left) + (
-                    len(y_right) / n
-                ) * np.var(y_right)
+                feature_var = (
+                    sum(weights_left) / sum(weights_sorted)
+                ) * compute_variance(y_left, weights_left) + (
+                    sum(weights_right) / sum(weights_sorted)
+                ) * compute_variance(y_right, weights_right)
 
                 if min_feature_var > feature_var:
                     min_split = split

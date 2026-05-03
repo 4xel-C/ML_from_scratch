@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Tuple
 
 import numpy as np
 from numpy.typing import NDArray
@@ -24,9 +24,7 @@ class DecisionTreeClassifier(DecisionTreeBase):
         # for classification we will use Gini index
         self.min_gini = min_gini
 
-    def _build_tree(
-        self, X: NDArray, y: NDArray, node: Node, weights: Optional[NDArray] = None
-    ) -> Node:
+    def _build_tree(self, X: NDArray, y: NDArray, node: Node, weights: NDArray) -> Node:
         # check the stopping parameters
         if node.level > self.max_depth or len(X) < self.min_samples_split:
             mode = find_mode(y, weights)
@@ -34,7 +32,9 @@ class DecisionTreeClassifier(DecisionTreeBase):
             return node
 
         # Update the currend node
-        node.feature_idx, node.threshold, splitted_gini = self._best_split(X, y)
+        node.feature_idx, node.threshold, splitted_gini = self._best_split(
+            X, y, weights
+        )
 
         # Split the data
         mask_left = X[:, node.feature_idx] < node.threshold
@@ -43,8 +43,8 @@ class DecisionTreeClassifier(DecisionTreeBase):
         X_left, y_left = X[mask_left, :], y[mask_left]
         X_right, y_right = X[mask_right, :], y[mask_right]
 
-        weights_left = weights[mask_left] if weights is not None else None
-        weights_right = weights[mask_right] if weights is not None else None
+        weights_left = weights[mask_left]
+        weights_right = weights[mask_right]
 
         # Confirm min_samples
         if len(X_left) < self.min_samples_leaf or len(X_right) < self.min_samples_leaf:
@@ -76,7 +76,9 @@ class DecisionTreeClassifier(DecisionTreeBase):
 
         return node
 
-    def _best_split(self, X: NDArray, y: NDArray) -> Tuple[int, float, float]:
+    def _best_split(
+        self, X: NDArray, y: NDArray, weights: NDArray
+    ) -> Tuple[int, float, float]:
         """Find the best feature and the optimized threshold to minimize the gini index (reduce entropy)
 
         Returns:
@@ -93,7 +95,7 @@ class DecisionTreeClassifier(DecisionTreeBase):
             x_sorted = x[ordered_indices]
             y_ordered = y[ordered_indices]
 
-            weights_ordered = self.weights[ordered_indices]
+            weights_ordered = weights[ordered_indices]
 
             # minimum value with corresponding threshold
             min_gini = float("inf")

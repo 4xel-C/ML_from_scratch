@@ -77,10 +77,10 @@ class DecisionTreeBase(ABC):
 
     @abstractmethod
     def _build_tree(
-        self, X: NDArray, y: NDArray, node: Node, weights: Optional[NDArray]
+        self, X: NDArray, y: NDArray, node: Node, weights: NDArray
     ) -> Node: ...
 
     @abstractmethod
     def _best_split(
-        self, X: NDArray, y: NDArray, wieghts: Optional[NDArray]
+        self, X: NDArray, y: NDArray, weights: NDArray
     ) -> Tuple[int, float, float]: ...

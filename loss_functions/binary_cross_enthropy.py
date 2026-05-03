@@ -1,8 +1,6 @@
 import numpy as np
 from numpy.typing import NDArray
 
-from helpers import sigmoid
-
 
 def bce(proba: NDArray, y_true: NDArray) -> np.float32:
     # protection if probability goes to 1 or 0

@@ -6,8 +6,6 @@ Sigmoid(Logit) -> Probability of predicting positive class
 Loss function: Binary cross-entropy BCE = -sum(ylog(p) + (1-y)log(1-p))
 """
 
-from typing import Optional
-
 import numpy as np
 from numpy.typing import NDArray
 

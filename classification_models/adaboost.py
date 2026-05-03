@@ -6,7 +6,7 @@ from numpy.typing import NDArray
 from classification_models import DecisionTreeClassifier
 
 
-class AdaBoost:
+class AdaBoostClassifier:
     def __init__(self, n_estimators: int = 100) -> None:
         self.n_estimators = n_estimators
         self.fitted = False
@@ -30,11 +30,10 @@ class AdaBoost:
             tree = DecisionTreeClassifier(max_depth=1)  # Max depth of 1 for adaboost
 
             # Fit the data
-            tree.fit(X, y)
+            tree.fit(X, y, weights=self.w)
 
             # Make the prediction
-            # TODO: Compute the weights argument for decisiontreeclassifier
-            predictions = tree.predict(X, weights=self.w)
+            predictions = tree.predict(X)
 
             # Compute the weighted mean of the error (between 0 and 1)
             error = np.sum(self.w * (predictions != y) / sum(self.w))

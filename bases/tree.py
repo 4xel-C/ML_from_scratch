@@ -33,7 +33,11 @@ class DecisionTreeBase(ABC):
         self.min_samples_leaf = min_samples_leaf
         self.min_variance = min_variance
 
-    def fit(self, X, y):
+        # Declaration of instance variables
+        self.weights: NDArray  # Weights for samples
+        self.tree: Node
+
+    def fit(self, X: NDArray, y: NDArray, weights: Optional[NDArray]):
         # Get the first split
         root_node: Node = Node(
             level=0,
@@ -41,7 +45,10 @@ class DecisionTreeBase(ABC):
             threshold=0,  # Placeholder value
         )
 
-        self.tree = self._build_tree(X, y, root_node)
+        # refresh the weights with the new weights if passed, else compute equal weights for each
+        self.weights = weights if weights is not None else np.full(len(y), 1 / len(y))
+
+        self.tree = self._build_tree(X, y, root_node, self.weights)
 
     def predict(self, X):
         return np.apply_along_axis(lambda x: self._traverse(x, self.tree), 1, X)
@@ -69,7 +76,11 @@ class DecisionTreeBase(ABC):
         return result
 
     @abstractmethod
-    def _build_tree(self, X: NDArray, y: NDArray, node: Node) -> Node: ...
+    def _build_tree(
+        self, X: NDArray, y: NDArray, node: Node, weights: Optional[NDArray]
+    ) -> Node: ...
 
     @abstractmethod
-    def _best_split(self, X: NDArray, y: NDArray) -> Tuple[int, float, float]: ...
+    def _best_split(
+        self, X: NDArray, y: NDArray, wieghts: Optional[NDArray]
+    ) -> Tuple[int, float, float]: ...

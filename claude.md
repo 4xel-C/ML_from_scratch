@@ -298,9 +298,19 @@ Chaque implémentation suit ce processus :
 
 ## Prochains algorithmes suggérés
 
-### Niveau 2
-- **Gradient Boosting** — boosting séquentiel
+### Niveau 2 — Méthodes d'ensemble (Boosting)
+- **AdaBoost** — boosting séquentiel par pondération des erreurs, point d'entrée au boosting
+- **Gradient Boosting** — généralisation du boosting, s'appuie sur les `DecisionTreeRegressor` existants
 
-### Niveau 3
-- **Gradient Boosting** — boosting séquentiel
-- **Neural Network** — backpropagation, couches
+### Niveau 2 — Clustering & Réduction de dimension
+- **Hierarchical Clustering** — dendrogramme, linkage (single/complete/average), pas besoin de fixer k
+- **GMM (Gaussian Mixture Models)** — algorithme EM complet, pendant probabiliste de K-Means
+- **t-SNE** — réduction de dimension non-linéaire, complément à la PCA
+
+### Niveau 3 — Classifieurs
+- **SVM (Support Vector Machine)** — marge maximale, kernel trick, perspective très différente des arbres
+- **Perceptron** — brique de base des réseaux de neurones
+
+### Niveau 3 — Réseaux de neurones
+- **MLP (Multi-Layer Perceptron)** — backpropagation, couches denses
+- **CNN (Convolutional Neural Network)** — convolutions, pooling

@@ -1,10 +1,10 @@
-from typing import Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
 
 from bases import DecisionTreeBase, Node
-from helpers import gini
+from helpers import find_mode, gini
 
 
 class DecisionTreeClassifier(DecisionTreeBase):
@@ -24,12 +24,13 @@ class DecisionTreeClassifier(DecisionTreeBase):
         # for classification we will use Gini index
         self.min_gini = min_gini
 
-    def _build_tree(self, X: NDArray, y: NDArray, node: Node) -> Node:
+    def _build_tree(
+        self, X: NDArray, y: NDArray, node: Node, weights: Optional[NDArray] = None
+    ) -> Node:
         # check the stopping parameters
         if node.level > self.max_depth or len(X) < self.min_samples_split:
-            # find the mode (most frequent class)
-            classes, counts = np.unique(y, return_counts=True)
-            node.value = classes[np.argmax(counts)]
+            mode = find_mode(y, weights)
+            node.value = mode
             return node
 
         # Update the currend node
@@ -42,11 +43,14 @@ class DecisionTreeClassifier(DecisionTreeBase):
         X_left, y_left = X[mask_left, :], y[mask_left]
         X_right, y_right = X[mask_right, :], y[mask_right]
 
+        weights_left = weights[mask_left] if weights is not None else None
+        weights_right = weights[mask_right] if weights is not None else None
+
         # Confirm min_samples
         if len(X_left) < self.min_samples_leaf or len(X_right) < self.min_samples_leaf:
             # find the mode (most frequent class)
-            classes, counts = np.unique(y, return_counts=True)
-            node.value = classes[np.argmax(counts)]
+            mode = find_mode(y, weights)
+            node.value = mode
             return node
 
         # Check if the gini delta if sufficient
@@ -54,8 +58,8 @@ class DecisionTreeClassifier(DecisionTreeBase):
 
         if delta < self.min_gini:
             # find the mode (most frequent class)
-            classes, counts = np.unique(y, return_counts=True)
-            node.value = classes[np.argmax(counts)]
+            mode = find_mode(y, weights)
+            node.value = mode
             return node
 
         # build the left node
@@ -67,8 +71,8 @@ class DecisionTreeClassifier(DecisionTreeBase):
             level=node.level + 1,
         )
 
-        node.left = self._build_tree(X_left, y_left, node_left)
-        node.right = self._build_tree(X_right, y_right, node_right)
+        node.left = self._build_tree(X_left, y_left, node_left, weights_left)
+        node.right = self._build_tree(X_right, y_right, node_right, weights_right)
 
         return node
 
@@ -89,6 +93,8 @@ class DecisionTreeClassifier(DecisionTreeBase):
             x_sorted = x[ordered_indices]
             y_ordered = y[ordered_indices]
 
+            weights_ordered = self.weights[ordered_indices]
+
             # minimum value with corresponding threshold
             min_gini = float("inf")
             min_threshold = 0
@@ -99,13 +105,16 @@ class DecisionTreeClassifier(DecisionTreeBase):
                 threshold = (x_sorted[i + 1] + x_sorted[i]) / 2
 
                 # Compute the gini index
-                y_left = y_ordered[x_sorted < threshold]
+                y_left = y_ordered[x_sorted <= threshold]
                 y_right = y_ordered[x_sorted > threshold]
 
+                weights_left = weights_ordered[x_sorted <= threshold]
+                weights_right = weights_ordered[x_sorted > threshold]
+
                 # Compute the weighed gini index
-                gini_value = (len(y_left) / len(y)) * gini(y_left) + (
-                    len(y_right) / len(y)
-                ) * gini(y_right)
+                gini_value = sum(weights_left) * gini(y_left, weights_left) + sum(
+                    weights_right
+                ) * gini(y_right, weights_right)
 
                 if gini_value < min_gini:
                     min_gini = gini_value

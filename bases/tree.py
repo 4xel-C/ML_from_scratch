@@ -37,7 +37,7 @@ class DecisionTreeBase(ABC):
         self.weights: NDArray  # Weights for samples
         self.tree: Node
 
-    def fit(self, X: NDArray, y: NDArray, weights: Optional[NDArray]):
+    def fit(self, X: NDArray, y: NDArray, weights: Optional[NDArray] = None):
         # Get the first split
         root_node: Node = Node(
             level=0,

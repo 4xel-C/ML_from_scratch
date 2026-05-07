@@ -1,6 +1,7 @@
 from regression_models.decision_tree_regressor import DecisionTreeRegressor
+from regression_models.gradient_boosting import GradientBoosting
 from regression_models.lasso import Lasso
 from regression_models.linear_regression import LinearRegression
 from regression_models.ridge import Ridge
 
-__all__ = ["LinearRegression", "Lasso", "Ridge", "DecisionTreeRegressor"]
+__all__ = ["LinearRegression", "Lasso", "Ridge", "DecisionTreeRegressor", "GradientBoosting"]

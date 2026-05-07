@@ -331,10 +331,40 @@ Chaque implémentation suit ce processus :
 
 ---
 
+### 14. Gradient Boosting
+**Type** : Supervisé — Régression
+**Fichier** : `regression_models/gradient_boosting.py`
+**Dépend de** : `DecisionTreeRegressor`
+
+**Concepts clés**
+- Boosting sequentiel : chaque arbre prédit les **résidus** du modèle précédent
+- Initialisation : F_0 = mean(y) pour tous les x
+- Mise à jour : F_{m+1} = F_m + eta * h_m(X) où h_m est entrainé sur les résidus y - F_m
+- Learning rate `eta` : hyperparamètre fixe (défaut 0.1) — petit eta = plus d'arbres nécessaires, moins d'overfitting
+
+**Pipeline**
+1. Initialiser F = mean(y)
+2. Pour chaque estimateur : calculer res = y - F, entraîner h_m sur (X, res), mettre à jour F = F + eta * h_m(X)
+3. Prédire : F_0 + sum(eta * h_m(X)) pour chaque arbre
+
+**Différence clé avec AdaBoost**
+| | AdaBoost | Gradient Boosting |
+|---|---|---|
+| Ce que corrige l'arbre suivant | Samples mal classés (poids) | Résidus (erreur de prédiction) |
+| Pondération des arbres | alpha calculé selon l'erreur | learning rate fixe |
+| Type de problème | Classification | Régression (ici) |
+
+**Points importants**
+- Arbres peu profonds (max_depth=3) pour éviter l'overfitting
+- `self.mean` stocké comme float pour initialiser les prédictions au `predict`
+- MSE identique à sklearn sur données de test
+
+---
+
 ## Prochains algorithmes suggérés
 
 ### Niveau 2 — Méthodes d'ensemble (Boosting)
-- **Gradient Boosting** — généralisation du boosting, s'appuie sur les `DecisionTreeRegressor` existants
+- **Gradient Boosting Classifier** — adaptation pour la classification (log-loss, probabilités)
 
 ### Niveau 2 — Clustering & Réduction de dimension
 - **Hierarchical Clustering** — dendrogramme, linkage (single/complete/average), pas besoin de fixer k

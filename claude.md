@@ -361,10 +361,43 @@ Chaque implémentation suit ce processus :
 
 ---
 
-## Prochains algorithmes suggérés
+### 15. Gradient Boosting Classifier
+**Type** : Supervisé — Classification
+**Fichier** : `classification_models/gradient_boosting_classifier.py`
+**Dépend de** : `DecisionTreeRegressor`
 
-### Niveau 2 — Méthodes d'ensemble (Boosting)
-- **Gradient Boosting Classifier** — adaptation pour la classification (log-loss, probabilités)
+**Concepts clés**
+- Même principe que le Regressor mais minimise la **cross-entropy** au lieu de la MSE
+- F représente les **log-odds** : `p = sigmoid(F)`
+- Pseudo-résidu = opposé du gradient de la cross-entropy par rapport à F : `r = y - sigmoid(F) = y - p`
+- Les arbres font de la **régression sur les résidus** dans l'espace des log-odds
+
+**Pipeline**
+1. Initialiser F_0 = log(p0 / (1 - p0)) où p0 = mean(y) — stocké comme scalaire float
+2. Calculer r = y - sigmoid(F_0)
+3. Pour chaque estimateur : entraîner h_m sur (X, r), mettre à jour F = F + eta * h_m(X), recalculer r = y - sigmoid(F)
+4. Prédire : p = sigmoid(F_0 + sum(eta * h_m(X))), classe = (p >= 0.5)
+
+**Dérivation du pseudo-résidu**
+- dL/dF = dL/dp * dp/dF = (-y/p + (1-y)/(-1/(1-p))) * p*(1-p) = p - y
+- Donc r = -dL/dF = y - p
+
+**Points importants**
+- `self.fzero` est un **scalaire** float (pas un vecteur) pour pouvoir prédire sur X de taille quelconque
+- La cross-entropy se dérive par rapport à F (log-odds), pas par rapport à p — espace non contraint
+- Léger écart avec sklearn sur données multi-features : sklearn optimise les valeurs de feuilles
+
+**Différence clé avec le Regressor**
+| | GB Regressor | GB Classifier |
+|---|---|---|
+| Loss | MSE | Cross-entropy |
+| Pseudo-résidu | y - F | y - sigmoid(F) |
+| Initialisation F_0 | mean(y) | log(p0 / (1-p0)) |
+| Prédiction finale | F directement | sigmoid(F) >= 0.5 |
+
+---
+
+## Prochains algorithmes suggérés
 
 ### Niveau 2 — Clustering & Réduction de dimension
 - **Hierarchical Clustering** — dendrogramme, linkage (single/complete/average), pas besoin de fixer k

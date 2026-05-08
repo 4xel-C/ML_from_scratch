@@ -52,8 +52,8 @@ class GradientBoostingClassifier:
             len(y), np.log(pzero / (1 - pzero))
         )  # use the logit of the prior probability
 
-        # Keep the initial logit prediction in memory
-        self.fzero = logit
+        # Keep the initial logit prediction in memory (scalar)
+        self.fzero = float(np.log(pzero / (1 - pzero)))
 
         # Compute the pseudo-residus using the cross entropy loss function gradient
         residus = (

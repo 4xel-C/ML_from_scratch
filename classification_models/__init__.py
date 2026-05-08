@@ -1,5 +1,6 @@
 from classification_models.adaboost import AdaBoostClassifier
 from classification_models.decision_tree_classifier import DecisionTreeClassifier
+from classification_models.gradient_boosting_classifier import GradientBoostingClassifier
 from classification_models.KNN_classification import KNN
 from classification_models.logistic_regression import LogisticRegression
 from classification_models.naive_bayes import NaiveBayes
@@ -12,4 +13,5 @@ __all__ = [
     "DecisionTreeClassifier",
     "RandomForest",
     "AdaBoostClassifier",
+    "GradientBoostingClassifier",
 ]

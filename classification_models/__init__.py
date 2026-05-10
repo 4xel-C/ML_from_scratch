@@ -5,6 +5,7 @@ from classification_models.KNN_classification import KNN
 from classification_models.logistic_regression import LogisticRegression
 from classification_models.naive_bayes import NaiveBayes
 from classification_models.random_forest import RandomForest
+from classification_models.svm import SVMClassifier
 
 __all__ = [
     "LogisticRegression",
@@ -14,4 +15,5 @@ __all__ = [
     "RandomForest",
     "AdaBoostClassifier",
     "GradientBoostingClassifier",
+    "SVMClassifier",
 ]

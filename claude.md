@@ -21,6 +21,11 @@ Chaque implémentation suit ce processus :
 - Ne donne des **indices** que si l'apprenant est explicitement bloqué — laisser chercher d'abord
 - Encourage la **vectorisation NumPy** plutôt que les boucles Python
 - Valide chaque étape avant de passer à la suivante
+- **Décompose chaque étape en sous-étapes** — une seule question à la fois, jamais plusieurs concepts d'un coup
+- **Ne jamais donner la réponse directement** — même pour une explication, guider par des questions successives
+- Si l'apprenant demande une explication, poser des questions pour qu'il reconstruise le raisonnement lui-même
+- Progresse **linéairement** : problème → formalisation → formules → gradients → code → validation
+- Ne jamais donner le pseudo-code ou la structure du code — laisser l'apprenant proposer
 
 ### Ce que l'apprenant doit faire
 - Donner l'algorithme et les formules à utiliser
@@ -396,6 +401,36 @@ Chaque implémentation suit ce processus :
 | Prédiction finale | F directement | sigmoid(F) >= 0.5 |
 
 ---
+
+### 16. SVM (Support Vector Machine)
+**Type** : Supervisé — Classification
+**Fichier** : `classification_models/svm.py`
+
+**Concepts clés**
+- Objectif : trouver l'hyperplan séparateur qui **maximise la marge** entre les deux classes
+- Hyperplan : w^T x + b = 0, hyperplans de support à ±1
+- Largeur de la marge : 2 / ||w||
+- Minimiser (1/2) ||w||^2 sous contrainte y_i * (w^T x_i + b) >= 1
+
+**Soft margin (version implémentée)**
+- Slack variable xi_i = max(0, 1 - y_i * (w^T x_i + b))
+- Objectif : minimiser (1/2) ||w||^2 + C * sum(xi_i)
+- C grand : marge étroite, peu de violations tolérées
+- C petit : marge large, plus de violations acceptées
+
+**Hinge loss**
+- L = (1/2) ||w||^2 + C * sum(max(0, 1 - y_i * (w^T x_i + b)))
+- Obtenue en substituant xi_i optimal dans l'objectif soft margin
+
+**Gradients**
+- Points bien classés (y_i * (w^T x_i + b) >= 1) : dL/dw = w, dL/db = 0
+- Points violants (y_i * (w^T x_i + b) < 1) : dL/dw = w - C * sum(y_i * x_i), dL/db = -C * sum(y_i)
+
+**Implémentation**
+- Labels remappés : {0, 1} -> {-1, +1}
+- Masque booléen pour isoler les points violants : np.where(y * dist < 1)
+- Mise à jour vectorisée : une seule update par itération sur tous les points violants
+- Prédiction : signe de w^T x + b (seuil à 0, pas à 1)
 
 ## Prochains algorithmes suggérés
 

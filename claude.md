@@ -432,6 +432,40 @@ Chaque implémentation suit ce processus :
 - Mise à jour vectorisée : une seule update par itération sur tous les points violants
 - Prédiction : signe de w^T x + b (seuil à 0, pas à 1)
 
+### 17. SHAP Values (Monte Carlo par permutations)
+**Type** : Explicabilité — modèle-agnostique
+**Fichier** : `explainability/shap.py`
+
+**Concepts clés**
+- Basé sur les Shapley values de la théorie des jeux coopératifs
+- La valeur SHAP de la feature i mesure sa contribution marginale moyenne sur toutes les permutations possibles
+- Formule exacte : shap(i) = sum over S not containing i of [ |S|! * (n-|S|-1)! / n! * (f(S u {i}, x) - f(S, x)) ]
+- f(S, x) = prédiction en fixant les features de S aux valeurs de x, features hors S remplacées par un point du background
+
+**Estimation de f(S, x)**
+- Background dataset Z : m exemples tirés aléatoirement du dataset
+- Pour un point z du background : construire un vecteur hybride — features dans S prennent les valeurs de x, features hors S gardent les valeurs de z
+- f(S, x) ≈ prediction(vecteur hybride)
+
+**Algorithme Monte Carlo par permutations**
+1. Pour chaque point x à expliquer :
+2. Pour chaque itération : tirer un z aléatoire dans Z, générer une permutation aléatoire des n features
+3. Parcourir la permutation en ajoutant les features une par une depuis z vers x
+4. Contribution marginale de la feature j = prediction(après ajout de j) - prediction(avant ajout de j)
+5. Accumuler et moyenner sur n_sampling itérations
+
+**Pourquoi les permutations sont équivalentes aux coalitions**
+- Chaque permutation définit implicitement une coalition S = features arrivant avant i
+- Moyenner sur toutes les permutations = moyenner sur toutes les coalitions avec le bon poids w(S)
+
+**Points importants**
+- Complexité : O(n_samples * n_sampling * n_features) — linéaire en tout, tractable
+- Validation : ranking identique à shap.KernelExplainer sur diabetes dataset
+- Pour la régression : model.predict ; pour la classification : model.predict_proba
+- Convergence : augmenter n_sampling et background_size pour réduire la variance
+
+---
+
 ## Prochains algorithmes suggérés
 
 ### Niveau 2 — Clustering & Réduction de dimension

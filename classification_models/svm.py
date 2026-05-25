@@ -25,8 +25,7 @@ when C is big: strong penalization of the margin violations, narrow margin
 otherwise: more violations are tolerated, larger margin
 
 We want E_i >= max(0, 1 - y_i * (w^tx_i +b)) (Constraint manipulation and positive)
-
-La syntaxe de la commande n'est pas correcte.
+-> E_i effective when the point is misclassified or in the margin, otherwise E_i = 0
 
 L = (1/2) ||w||^2 + C * sum(max(0, 1 - y_i * (w^tx_i +b))
 

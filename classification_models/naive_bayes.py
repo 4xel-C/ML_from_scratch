@@ -80,6 +80,7 @@ class NaiveBayes:
             / (2 * self.var[np.newaxis, :, :])
         )
 
+        # Dimension : (n_test, k, n_features) -> (n_test, k) by summing the loglikelihood of each features for each class
         posterior = np.sum(posterior, axis=2)
 
         # Adding the log(proportion) to the posterior if categorical features present

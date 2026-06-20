@@ -402,35 +402,49 @@ Chaque implémentation suit ce processus :
 
 ---
 
-### 16. SVM (Support Vector Machine)
+### 16. SVM (Support Vector Machine) — Linéaire & Noyau
 **Type** : Supervisé — Classification
 **Fichier** : `classification_models/svm.py`
+**Classes** : `SVMClassifier` (linéaire), `KernelSVM` (RBF)
 
-**Concepts clés**
+**Concepts clés communs**
 - Objectif : trouver l'hyperplan séparateur qui **maximise la marge** entre les deux classes
 - Hyperplan : w^T x + b = 0, hyperplans de support à ±1
 - Largeur de la marge : 2 / ||w||
-- Minimiser (1/2) ||w||^2 sous contrainte y_i * (w^T x_i + b) >= 1
-
-**Soft margin (version implémentée)**
-- Slack variable xi_i = max(0, 1 - y_i * (w^T x_i + b))
-- Objectif : minimiser (1/2) ||w||^2 + C * sum(xi_i)
-- C grand : marge étroite, peu de violations tolérées
-- C petit : marge large, plus de violations acceptées
-
-**Hinge loss**
-- L = (1/2) ||w||^2 + C * sum(max(0, 1 - y_i * (w^T x_i + b)))
-- Obtenue en substituant xi_i optimal dans l'objectif soft margin
-
-**Gradients**
-- Points bien classés (y_i * (w^T x_i + b) >= 1) : dL/dw = w, dL/db = 0
-- Points violants (y_i * (w^T x_i + b) < 1) : dL/dw = w - C * sum(y_i * x_i), dL/db = -C * sum(y_i)
-
-**Implémentation**
 - Labels remappés : {0, 1} -> {-1, +1}
+
+**Soft margin (SVMClassifier — descente de gradient)**
+- Slack variable xi_i = max(0, 1 - y_i * (w^T x_i + b))
+- Hinge loss : L = (1/2) ||w||^2 + C * sum(max(0, 1 - y_i * (w^T x_i + b)))
+- Gradients sur les points violants : dL/dw = w - C * sum(y_i * x_i), dL/db = -C * sum(y_i)
 - Masque booléen pour isoler les points violants : np.where(y * dist < 1)
-- Mise à jour vectorisée : une seule update par itération sur tous les points violants
-- Prédiction : signe de w^T x + b (seuil à 0, pas à 1)
+
+**Kernel SVM (KernelSVM — formulation duale + cvxopt)**
+- Motivation : données non linéairement séparables → projection dans un espace de grande dimension via phi(x)
+- Kernel trick : remplacer x_i^T x_j par K(x_i, x_j) = phi(x_i)^T phi(x_j) sans calculer phi explicitement
+- Condition KKT : w = sum(alpha_i * y_i * x_i) → les données n'apparaissent que sous forme de produits scalaires
+- Problème dual : maximiser sum(alpha_i) - (1/2) * sum_ij(alpha_i * alpha_j * y_i * y_j * K_ij)
+  sous : 0 <= alpha_i <= C et sum(alpha_i * y_i) = 0
+
+**Noyau RBF (Gaussien)**
+- K(x_i, x_j) = exp(-gamma * ||x_i - x_j||^2)
+- Mesure de similarité : proche de 1 si points voisins, proche de 0 si points éloignés
+- gamma grand : gaussiennes étroites, frontière très flexible ; gamma petit : frontière plus lisse
+
+**Pipeline KernelSVM**
+1. Remapper y vers {-1, +1}
+2. Calculer la matrice de Gram K de shape (n, n) : K_ij = exp(-gamma * ||x_i - x_j||^2)
+3. Formuler le QP (P = y*y^T * K, q = -1, G/h pour 0<=alpha<=C, A=y^T, b=0)
+4. Résoudre avec cvxopt → alpha de shape (n,)
+5. Support vectors : alpha_i > 1e-5
+6. Biais : b = mean(y_i - sum_j(alpha_j * y_j * K_ij)) sur les support vectors
+7. Prédiction : sign(K_test @ (alpha * y) + b), remappé vers {0, 1}
+
+**Points importants**
+- cvxopt attend des matrices float64 : passer `tc='d'` à chaque `matrix()`
+- `b` pour cvxopt doit être de shape (1, 1), pas un scalaire
+- Support vectors : les seuls points avec alpha_i > 0 (les autres ont contribution nulle)
+- Prédiction : signe de f(x) = sum(alpha_i * y_i * K(x_i, x)) + b
 
 ### 17. SHAP Values (Monte Carlo par permutations)
 **Type** : Explicabilité — modèle-agnostique
@@ -474,7 +488,6 @@ Chaque implémentation suit ce processus :
 - **t-SNE** — réduction de dimension non-linéaire, complément à la PCA
 
 ### Niveau 3 — Classifieurs
-- **SVM (Support Vector Machine)** — marge maximale, kernel trick, perspective très différente des arbres
 - **Perceptron** — brique de base des réseaux de neurones
 
 ### Niveau 3 — Réseaux de neurones

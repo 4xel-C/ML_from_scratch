@@ -42,3 +42,30 @@ class PCA:
 
     def explained_variance_ratio(self):
         return self.eigen_values / self.total_inertia
+
+
+if __name__ == "__main__":
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+    import numpy as np
+    from sklearn.datasets import load_iris
+    from sklearn.decomposition import PCA as SklearnPCA
+    from sklearn.preprocessing import StandardScaler
+
+    X, y = load_iris(return_X_y=True)
+    X = StandardScaler().fit_transform(X)
+
+    custom = PCA(n_components=2)
+    custom.fit(X)
+    X_custom = custom.transform(X)
+
+    sk = SklearnPCA(n_components=2)
+    X_sk = sk.fit_transform(X)
+
+    print("=== PCA comparison ===")
+    print(f"Custom explained variance ratio:  {custom.explained_variance_ratio()}")
+    print(f"Sklearn explained variance ratio: {sk.explained_variance_ratio_}")
+    print(f"Custom projection shape:  {X_custom.shape}")
+    print(f"Sklearn projection shape: {X_sk.shape}")

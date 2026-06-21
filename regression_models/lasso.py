@@ -1,3 +1,7 @@
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 """Implementation of the linear regression using lasso as regularization method
 Same as the linear regression, but adapting the lasso regularization to the loss function
 L = MSE + lambda . |w|
@@ -53,3 +57,26 @@ class Lasso(LinearRegression):
             loss = mse(predictions, y)
 
         self.fitted = True
+
+
+if __name__ == "__main__":
+    import numpy as np
+    from sklearn.datasets import make_regression
+    from sklearn.linear_model import Lasso as SklearnLasso
+    from sklearn.metrics import mean_squared_error
+    from sklearn.model_selection import train_test_split
+
+    X, y = make_regression(n_samples=300, n_features=10, noise=10, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
+
+    custom = Lasso(max_iterations=2000, learning_rate=0.01, l=0.1)
+    custom.fit(X_train, y_train)
+    pred_custom = custom.predict(X_test)
+
+    sk = SklearnLasso(alpha=0.1, max_iter=2000)
+    sk.fit(X_train, y_train)
+    pred_sk = sk.predict(X_test)
+
+    print("=== Lasso comparison ===")
+    print(f"Custom MSE:  {mean_squared_error(y_test, pred_custom):.4f}")
+    print(f"Sklearn MSE: {mean_squared_error(y_test, pred_sk):.4f}")

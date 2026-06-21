@@ -1,3 +1,7 @@
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 """
 Implementation of the logistic regression for classification.
 Linear regression for classification.
@@ -83,3 +87,26 @@ class LogisticRegression:
         proba_target = sigmoid(np.dot(X_b, self.w))
 
         return (1 - proba_target, proba_target)
+
+
+if __name__ == "__main__":
+    import numpy as np
+    from sklearn.datasets import make_classification
+    from sklearn.linear_model import LogisticRegression as SklearnLR
+    from sklearn.metrics import accuracy_score
+    from sklearn.model_selection import train_test_split
+
+    X, y = make_classification(n_samples=300, n_features=6, n_informative=4, n_redundant=2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
+
+    custom = LogisticRegression(learning_rate=0.1, n_iterations=1000)
+    custom.fit(X_train, y_train)
+    pred_custom = custom.predict(X_test)
+
+    sk = SklearnLR(max_iter=1000)
+    sk.fit(X_train, y_train)
+    pred_sk = sk.predict(X_test)
+
+    print("=== Logistic Regression comparison ===")
+    print(f"Custom accuracy:  {accuracy_score(y_test, pred_custom):.4f}")
+    print(f"Sklearn accuracy: {accuracy_score(y_test, pred_sk):.4f}")

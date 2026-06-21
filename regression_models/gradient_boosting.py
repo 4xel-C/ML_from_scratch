@@ -1,3 +1,7 @@
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from typing import List, Optional
 
 import numpy as np
@@ -58,3 +62,26 @@ class GradientBoosting:
             res = res + (self.eta * predictions)
 
         return res
+
+
+if __name__ == "__main__":
+    import numpy as np
+    from sklearn.datasets import make_regression
+    from sklearn.ensemble import GradientBoostingRegressor as SklearnGB
+    from sklearn.metrics import mean_squared_error
+    from sklearn.model_selection import train_test_split
+
+    X, y = make_regression(n_samples=300, n_features=5, noise=10, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
+
+    custom = GradientBoosting(learning_rate=0.1, n_estimators=100, max_depth=3)
+    custom.fit(X_train, y_train)
+    pred_custom = custom.predict(X_test)
+
+    sk = SklearnGB(learning_rate=0.1, n_estimators=100, max_depth=3, random_state=42)
+    sk.fit(X_train, y_train)
+    pred_sk = sk.predict(X_test)
+
+    print("=== Gradient Boosting Regressor comparison ===")
+    print(f"Custom MSE:  {mean_squared_error(y_test, pred_custom):.4f}")
+    print(f"Sklearn MSE: {mean_squared_error(y_test, pred_sk):.4f}")

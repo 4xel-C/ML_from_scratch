@@ -1,3 +1,7 @@
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from typing import Tuple
 
 import numpy as np
@@ -132,3 +136,26 @@ class DecisionTreeClassifier(DecisionTreeBase):
         gini_value = feature_gini[best_feature, 0]
 
         return best_feature, best_threshold, gini_value
+
+
+if __name__ == "__main__":
+    import numpy as np
+    from sklearn.datasets import make_classification
+    from sklearn.metrics import accuracy_score
+    from sklearn.model_selection import train_test_split
+    from sklearn.tree import DecisionTreeClassifier as SklearnDTC
+
+    X, y = make_classification(n_samples=300, n_features=6, n_informative=4, n_redundant=2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
+
+    custom = DecisionTreeClassifier(max_depth=5)
+    custom.fit(X_train, y_train)
+    pred_custom = custom.predict(X_test)
+
+    sk = SklearnDTC(max_depth=5)
+    sk.fit(X_train, y_train)
+    pred_sk = sk.predict(X_test)
+
+    print("=== Decision Tree Classifier comparison ===")
+    print(f"Custom accuracy:  {accuracy_score(y_test, pred_custom):.4f}")
+    print(f"Sklearn accuracy: {accuracy_score(y_test, pred_sk):.4f}")

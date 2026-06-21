@@ -221,6 +221,10 @@ class KernelSVM:
 
 
 if __name__ == "__main__":
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
     from sklearn.datasets import make_classification
     from sklearn.metrics import accuracy_score
     from sklearn.model_selection import train_test_split

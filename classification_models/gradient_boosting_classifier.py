@@ -1,3 +1,7 @@
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 """
 Implementaion of the gradient boosting classifier using cross_entropy as a loss function.
 L = -y * log(p) - (1 - y)*log(1 - p) for a binary classification
@@ -108,3 +112,26 @@ class GradientBoostingClassifier:
         probas = sigmoid(logits)
 
         return probas
+
+
+if __name__ == "__main__":
+    import numpy as np
+    from sklearn.datasets import make_classification
+    from sklearn.ensemble import GradientBoostingClassifier as SklearnGBC
+    from sklearn.metrics import accuracy_score
+    from sklearn.model_selection import train_test_split
+
+    X, y = make_classification(n_samples=300, n_features=6, n_informative=4, n_redundant=2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
+
+    custom = GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, max_depth=3)
+    custom.fit(X_train, y_train)
+    pred_custom = custom.predict(X_test)
+
+    sk = SklearnGBC(n_estimators=100, learning_rate=0.1, max_depth=3, random_state=42)
+    sk.fit(X_train, y_train)
+    pred_sk = sk.predict(X_test)
+
+    print("=== Gradient Boosting Classifier comparison ===")
+    print(f"Custom accuracy:  {accuracy_score(y_test, pred_custom):.4f}")
+    print(f"Sklearn accuracy: {accuracy_score(y_test, pred_sk):.4f}")

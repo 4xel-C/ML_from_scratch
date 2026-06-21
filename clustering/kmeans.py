@@ -87,3 +87,26 @@ class KMeans:
             centroids_idx = np.hstack([centroids_idx, new_centroid])
 
         return centroids_idx
+
+
+if __name__ == "__main__":
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+    import numpy as np
+    from sklearn.cluster import KMeans as SklearnKMeans
+    from sklearn.datasets import make_blobs
+    from sklearn.metrics import adjusted_rand_score
+
+    X, y_true = make_blobs(n_samples=300, centers=3, cluster_std=0.8, random_state=42)
+
+    custom = KMeans(k=3, max_iterations=100)
+    pred_custom = custom.fit(X)
+
+    sk = SklearnKMeans(n_clusters=3, random_state=42, n_init=10)
+    pred_sk = sk.fit_predict(X)
+
+    print("=== KMeans comparison ===")
+    print(f"Custom ARI:  {adjusted_rand_score(y_true, pred_custom):.4f}")
+    print(f"Sklearn ARI: {adjusted_rand_score(y_true, pred_sk):.4f}")

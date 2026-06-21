@@ -1,5 +1,9 @@
 from __future__ import annotations  # allow auto referencing class
 
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from typing import Tuple
 
 import numpy as np
@@ -132,3 +136,26 @@ class DecisionTreeRegressor(DecisionTreeBase):
         min_var = intra_class_variance[best_feature, 0]
 
         return best_feature, best_split, min_var
+
+
+if __name__ == "__main__":
+    import numpy as np
+    from sklearn.datasets import make_regression
+    from sklearn.metrics import mean_squared_error
+    from sklearn.model_selection import train_test_split
+    from sklearn.tree import DecisionTreeRegressor as SklearnDTR
+
+    X, y = make_regression(n_samples=300, n_features=5, noise=10, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
+
+    custom = DecisionTreeRegressor(max_depth=5)
+    custom.fit(X_train, y_train)
+    pred_custom = custom.predict(X_test)
+
+    sk = SklearnDTR(max_depth=5)
+    sk.fit(X_train, y_train)
+    pred_sk = sk.predict(X_test)
+
+    print("=== Decision Tree Regressor comparison ===")
+    print(f"Custom MSE:  {mean_squared_error(y_test, pred_custom):.4f}")
+    print(f"Sklearn MSE: {mean_squared_error(y_test, pred_sk):.4f}")

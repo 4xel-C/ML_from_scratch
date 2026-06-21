@@ -58,3 +58,28 @@ class DBScan:
             return False
         else:
             return True
+
+
+if __name__ == "__main__":
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+    import numpy as np
+    from sklearn.cluster import DBSCAN as SklearnDBSCAN
+    from sklearn.datasets import make_blobs
+    from sklearn.metrics import adjusted_rand_score
+
+    X, y_true = make_blobs(n_samples=200, centers=3, cluster_std=0.5, random_state=42)
+
+    custom = DBScan(epsilon=0.8, min_samples=4)
+    pred_custom = custom.fit_predict(X)
+
+    sk = SklearnDBSCAN(eps=0.8, min_samples=4)
+    pred_sk = sk.fit_predict(X)
+
+    print("=== DBSCAN comparison ===")
+    print(f"Custom ARI:  {adjusted_rand_score(y_true, pred_custom):.4f}")
+    print(f"Sklearn ARI: {adjusted_rand_score(y_true, pred_sk):.4f}")
+    print(f"Custom clusters found:  {len(set(pred_custom)) - (1 if -1 in pred_custom else 0)}")
+    print(f"Sklearn clusters found: {len(set(pred_sk)) - (1 if -1 in pred_sk else 0)}")

@@ -37,131 +37,6 @@ Chaque implémentation suit ce processus :
 
 ---
 
-## Algorithmes implémentés
-
-### 1. Régression Linéaire
-**Type** : Supervisé — Régression  
-**Fichier** : `regression_models/linear_regression.py`
-
-**Concepts clés**
-- Modèle : $\hat{y} = Xw$ (biais intégré via colonne de 1)
-- Loss : MSE $= \frac{1}{n} \sum (\hat{y} - y)^2$
-- Optimisation : descente de gradient
-- Gradient : $\frac{\partial MSE}{\partial w} = \frac{1}{n} X^T(\hat{y} - y)$
-- Initialisation de `w` à 0 (MSE convexe → un seul minimum global)
-
-**Points importants**
-- Ajouter une colonne de 1 à `X` pour le biais : `np.hstack([np.ones((n,1)), X])`
-- Condition d'arrêt : `iteration < max_iterations and loss > tol`
-
----
-
-### 2. Lasso (Régularisation L1)
-**Type** : Supervisé — Régression  
-**Fichier** : `regression_models/lasso.py`  
-**Hérite de** : `LinearRegression`
-
-**Concepts clés**
-- Loss : $MSE + \lambda \|w\|_1$
-- Gradient : $\frac{1}{n} X^T(\hat{y} - y) + \lambda \cdot \text{sign}(w)$
-- Propriété clé : **sparsité** — certains poids tombent exactement à 0
-- Ne pas régulariser le biais : `gradient[1:] += lambda * sign(w[1:])`
-
-**Pourquoi L1 produit de la sparsité**
-- La boule L1 est un losange avec des **coins sur les axes**
-- Le contact avec les contours du MSE se fait souvent sur un coin → $w_j = 0$
-- La pénalité $\lambda \cdot \text{sign}(w)$ est **constante** quelle que soit la valeur de $w$
-
----
-
-### 3. Ridge (Régularisation L2)
-**Type** : Supervisé — Régression  
-**Fichier** : `regression_models/ridge.py`  
-**Hérite de** : `LinearRegression`
-
-**Concepts clés**
-- Loss : $MSE + \lambda \|w\|_2^2$
-- Gradient : $\frac{1}{n} X^T(\hat{y} - y) + \lambda \cdot w$
-- Propriété clé : réduit les poids **sans les annuler**
-- Ne pas régulariser le biais : `gradient[1:] += lambda * w[1:]`
-
-**Différence L1 vs L2**
-| | Lasso (L1) | Ridge (L2) |
-|---|---|---|
-| Gradient régularisation | $\lambda \cdot \text{sign}(w)$ | $\lambda \cdot w$ |
-| Effet sur les poids | Force à 0 (sparsité) | Réduit sans annuler |
-| Boule | Losange (coins) | Cercle (lisse) |
-
----
-
-### 4. Régression Logistique
-**Type** : Supervisé — Classification  
-**Fichier** : `regression_models/logistic_regression.py`
-
-**Concepts clés**
-- Modèle : $\hat{y} = \sigma(Xw)$ où $\sigma(z) = \frac{1}{1+e^{-z}}$
-- Loss : BCE $= -\frac{1}{n}[y^T \log(\hat{y}) + (1-y)^T \log(1-\hat{y})]$
-- Gradient : $\frac{1}{n} X^T(\hat{y} - y)$ (identique à la régression linéaire !)
-- Sortie : probabilité $P(y=1 \mid X) \in [0, 1]$
-
-**Points importants**
-- Le **logit** $= Xw$ est la combinaison linéaire avant sigmoid
-- Seuil de décision : $\hat{y} \geq 0.5 \Rightarrow$ classe 1
-- Stabilité numérique BCE : `np.clip(proba, 1e-15, 1-1e-15)`
-- Dérivée sigmoid : $\sigma'(z) = \sigma(z)(1-\sigma(z))$
-
----
-
-### 5. K-Means
-**Type** : Non supervisé — Clustering  
-**Fichier** : `clustering_models/kmeans.py`
-
-**Concepts clés**
-- Algorithme EM : alterner **assignation** et **mise à jour des centroïdes**
-- Distance euclidienne vectorisée : `np.linalg.norm(X[:,np.newaxis,:] - centroids[np.newaxis,:,:], axis=2)`
-- Assignation : `distances.argmin(axis=1)`
-- Convergence : $\delta = \sum_k \|c_k^{new} - c_k^{old}\| < \epsilon$
-
-**K-Means++**
-- Initialisation intelligente pour éviter les centroïdes trop proches
-- Choisir chaque centroïde avec probabilité $\propto d^2$ au plus proche centroïde existant
-
----
-
-### 6. KNN (K-Nearest Neighbors)
-**Type** : Supervisé — Classification  
-**Fichier** : `classification_models/knn.py`
-
-**Concepts clés**
-- **Lazy learner** : pas d'entraînement, mémorisation de `X` et `y`
-- Matrice de distances : `np.linalg.norm(X_test[:,np.newaxis,:] - X_train[np.newaxis,:,:], axis=2)`
-- K voisins : `np.argsort(dist, axis=1)[:, :k]`
-- Vote majoritaire : `np.argmax(np.bincount(row))` sur chaque ligne
-
----
-
-### 7. Naive Bayes Gaussien (+ Catégoriel mixte)
-**Type** : Supervisé — Classification
-**Fichier** : `classification_models/naive_bayes.py`
-
-**Concepts clés**
-- Théorème de Bayes : $P(y \mid X) \propto P(X \mid y) \cdot P(y)$
-- Hypothèse **naïve** : features indépendantes entre elles
-- Vraisemblance gaussienne : $\log P(x_j \mid y=k) = -\frac{1}{2}\log(2\pi\sigma^2) - \frac{(x-\mu)^2}{2\sigma^2}$
-- Log-posterior : $\log P(y=k) + \sum_j \log P(x_j \mid y=k)$
-
-**`fit`** : calculer prior, moyennes et variances par classe
-**`predict`** : calculer log-posterior vectorisé, `argmax` sur les classes
-
-**Extension : features mixtes (continues + catégorielles)**
-- Paramètre optionnel `categorical_features` : masque booléen sur les colonnes catégorielles
-- Features catégorielles : loi **Categorical** — proportions par modalité et par classe
-- **Laplace smoothing** : $P(c \mid y=k) = \frac{count(c,k) + \alpha}{N_k + \alpha \cdot |\mathcal{V}|}$ pour éviter les probabilités nulles
-- Stockage : `defaultdict(lambda: defaultdict(dict))` — `proportions[feature_idx][class][modalité]`
-- Log-posterior final = contribution gaussienne (continues) + log-proportion (catégorielles)
-
----
-
 ## Broadcasting NumPy — Règles clés
 
 | Opération | Pattern | Résultat |
@@ -174,316 +49,129 @@ Chaque implémentation suit ce processus :
 
 ---
 
----
+## Algorithmes implémentés
+
+### 1. Régression Linéaire
+**Fichier** : `regression_models/linear_regression.py` | **Doc** : `docs/linear_regression.md`
+- Modèle : y_hat = Xw (biais via colonne de 1) | Loss : MSE | Gradient : (1/n) X^T(y_hat - y)
+- Initialisation w=0 (MSE convexe) | Arrêt : loss < tol ou max_iterations
+
+### 2. Lasso (L1)
+**Fichier** : `regression_models/lasso.py` | **Doc** : `docs/lasso.md`
+- Loss : MSE + lambda * |w| | Gradient[1:] += lambda * sign(w[1:]) (biais exclu)
+- Sparsité : boule L1 = losange avec coins sur les axes → poids forcés à 0
+
+### 3. Ridge (L2)
+**Fichier** : `regression_models/ridge.py` | **Doc** : `docs/ridge.md`
+- Loss : MSE + lambda * ||w||^2 | Gradient[1:] += lambda * w[1:] (biais exclu)
+- Réduit les poids sans les annuler | Sensible à l'échelle → StandardScaler recommandé
+
+### 4. Régression Logistique
+**Fichier** : `classification_models/logistic_regression.py` | **Doc** : `docs/logistic_regression.md`
+- Modèle : sigmoid(Xw) | Loss : BCE | Gradient : (1/n) X^T(p - y) (même forme que linéaire)
+- Seuil : p >= 0.5 → classe 1 | Clip BCE : np.clip(p, 1e-15, 1-1e-15)
+
+### 5. K-Means
+**Fichier** : `clustering/kmeans.py` | **Doc** : `docs/kmeans.md`
+- EM : assignation (argmin distance) + mise à jour centroïdes (moyenne)
+- K-Means++ : init avec proba proportionnelle à d^2 | Convergence : delta centroïdes < tol
+
+### 6. KNN
+**Fichier** : `classification_models/KNN_classification.py` | **Doc** : `docs/knn.md`
+- Lazy learner : mémorise X, y | Distance vectorisée shape (n_test, n_train)
+- K voisins : argsort[:, :k] | Vote majoritaire : bincount + argmax
+
+### 7. Naive Bayes Gaussien
+**Fichier** : `classification_models/naive_bayes.py` | **Doc** : `docs/naive_bayes.md`
+- P(y|X) ∝ P(X|y) * P(y) | Hypothèse naïve : features indépendantes
+- Log-posterior vectorisé shape (n_test, k) | Laplace smoothing pour features catégorielles
 
 ### 8. Decision Tree Regressor
-**Type** : Supervisé — Régression
-**Fichier** : `regression_models/decision_tree.py`
-
-**Concepts clés**
-- Construction récursive : `_build_tree` appelle `_best_split` puis se rappelle sur les sous-arbres gauche et droit
-- Critère de split : minimiser la **variance pondérée** des deux groupes
-  `variance_split = (n_left/n) * var(y_left) + (n_right/n) * var(y_right)`
-- Gain de variance : `delta_var = var(y) - variance_split` — doit être > `min_variance`
-- Prédiction en feuille : **moyenne de y** des points du nœud
-- Traversée : `_traverse(x, node)` récursif, `np.apply_along_axis` pour vectoriser sur X
-
-**Conditions d'arrêt**
-- `node.level == max_depth`
-- `len(X) < min_samples_split`
-- `len(X_left) < min_samples_leaf` ou `len(X_right) < min_samples_leaf`
-- `delta_var < min_variance`
-
-**Structure de données**
-- `@dataclass Node` avec `left`, `right`, `value` optionnels
-- `from __future__ import annotations` pour l'auto-référencement dans le dataclass
-
----
+**Fichier** : `regression_models/decision_tree_regressor.py` | **Doc** : `docs/decision_tree.md`
+- Split : minimiser variance pondérée | Feuille : moyenne de y
+- Structure : @dataclass Node (level, feature_idx, threshold, value, left, right)
+- Arrêt : max_depth, min_samples_split, min_samples_leaf, delta_var < min_variance
 
 ### 9. Decision Tree Classifier
-**Type** : Supervisé — Classification
-**Fichier** : `classification_models/decision_tree_classifier.py`
-**Hérite de** : `DecisionTreeBase` (dans `bases/`)
+**Fichier** : `classification_models/decision_tree_classifier.py` | **Doc** : `docs/decision_tree.md`
+- Split : minimiser Gini pondéré | Gini = 1 - sum(p_k^2) | Feuille : mode de y
+- Hérite de DecisionTreeBase | Supporte les poids (pour AdaBoost)
 
-**Concepts clés**
-- Même structure récursive que le Regressor
-- Critère de split : minimiser le **Gini pondéré** des deux groupes
-  `Gini_split = (n_left/n) * Gini(y_left) + (n_right/n) * Gini(y_right)`
-- Impureté de Gini : $Gini = 1 - \sum_k p_k^2$ — vaut 0 si nœud pur, 0.5 si 50/50
-- Gain de Gini : `delta = Gini(parent) - Gini_split` — doit être > `min_gini`
-- Valeur en feuille : **mode de y** (classe la plus fréquente) via `np.unique` + `argmax`
-
-**Différence clé avec le Regressor**
-| | Regressor | Classifier |
-|---|---|---|
-| Critère de split | Variance pondérée | Gini pondéré |
-| Valeur en feuille | Moyenne de y | Mode de y |
-
----
-
----
-
-### 10. PCA (Analyse en Composantes Principales)
-**Type** : Non supervisé — Réduction de dimension
-**Fichier** : `dimensionality_reduction/pca.py`
-
-**Concepts clés**
-- Objectif : projeter X (n, p) sur k directions qui maximisent la variance
-- Centrage : X_norm = X - mean(X)
-- Matrice de covariance : C = (1/n) * X_norm^T . X_norm
-- Décomposition spectrale : C = V * Lambda * V^T
-- Tri des vecteurs propres par valeur propre décroissante
-- Projection : X_reduit = X_centré . V_k — shape (n, k)
-
-**Pipeline**
-1. Centrer X
-2. Calculer C = (1/n) * X^T . X
-3. Décomposition spectrale -> valeurs propres + vecteurs propres
-4. Trier par valeur propre décroissante, garder les k premiers
-5. Projeter : X_reduit = X . V_k
-
-**Points importants**
-- Les vecteurs propres sont définis à un signe près — signe différent de sklearn est normal
-- `np.linalg.eig` retourne les vecteurs propres en colonnes
-- `fit` stocke `self.means` et `self.eigen_vectors` (shape p, k)
-- `transform` centre puis projette les nouvelles données
-
----
-
----
+### 10. PCA
+**Fichier** : `dimensionality_reduction/pca.py` | **Doc** : `docs/pca.md`
+- Centrer X → covariance C = (1/n) X^T X → décomposition spectrale → garder k vecteurs propres
+- Projection : X_reduit = X_centré @ V_k | Signe des vecteurs propres défini à ± près
 
 ### 11. Random Forest
-**Type** : Supervisé — Classification
-**Fichier** : `classification_models/random_forest.py`
-**Dépend de** : `DecisionTreeClassifier`
-
-**Concepts clés**
-- Méthode d'**ensemble** par bagging (Bootstrap AGGregatING)
-- Chaque arbre est entraîné sur un sous-échantillon bootstrap des données (tirage avec remise)
-- Chaque arbre utilise un sous-ensemble aléatoire de features (`max_features = sqrt(p)` par défaut)
-- Prédiction finale : **vote majoritaire** parmi tous les arbres
-
-**Pipeline**
-1. Pour chaque estimateur : tirer n samples avec remise + k features aléatoires
-2. Entraîner un `DecisionTreeClassifier` sur ce sous-ensemble
-3. Stocker `(tree, selected_features)` dans `ensemble_model`
-4. Prédire : récupérer la prédiction de chaque arbre, puis mode par `np.unique` + `argmax`
-
-**Points importants**
-- `max_features` est fixé une seule fois dans `fit` si non spécifié
-- Le stockage sous forme de liste de tuples `(classifier, NDArray)` permet de retrouver les bonnes features à l'inférence
-- La variance du modèle diminue avec le nombre d'arbres (mais le biais reste celui d'un arbre individuel)
-
----
-
----
+**Fichier** : `classification_models/random_forest.py` | **Doc** : `docs/random_forest.md`
+- Bagging : bootstrap samples + sqrt(p) features aléatoires par arbre
+- Stockage : liste de tuples (tree, selected_features) | Prédiction : vote majoritaire
 
 ### 12. DBSCAN
-**Type** : Non supervisé — Clustering  
-**Fichier** : `clustering/dbscan.py`
-
-**Concepts clés**
-- Clustering par **densité** : pas de forme supposée, détecte les outliers nativement
-- Trois types de points : **core** (≥ min_samples voisins dans epsilon), **border** (voisin d'un core mais pas core lui-même), **outlier** (-1)
-- Expansion BFS/DFS depuis chaque core point non visité
-
-**Pipeline**
-1. Calculer la matrice de distances (n, n) vectorisée
-2. Pour chaque point non assigné : vérifier s'il est core (`_is_core`)
-3. Si core : empiler et étendre — ajouter les voisins core au stack, les voisins border directement au cluster
-4. Incrémenter `cluster_number` après chaque cluster complet
-
-**Points importants**
-- `np.where(point <= epsilon)[0]` — le `[0]` est indispensable (np.where retourne un tuple)
-- `_is_core` exclut le point lui-même : `(point <= epsilon) & (point > 0)`
-- Cohérence : même condition `<=` dans `_is_core` et dans l'expansion
-- Outliers = points jamais atteints par une expansion (restent à -1)
-
----
-
----
+**Fichier** : `clustering/dbscan.py` | **Doc** : `docs/dbscan.md`
+- Core point : >= min_samples voisins dans epsilon (excluant lui-même)
+- Expansion BFS depuis chaque core non visité | Outliers : restent à -1
+- np.where retourne un tuple → [0] indispensable
 
 ### 13. AdaBoost
-**Type** : Supervisé — Classification
-**Fichier** : `classification_models/adaboost.py`
-**Dépend de** : `DecisionTreeClassifier` (avec support des poids)
+**Fichier** : `classification_models/adaboost.py` | **Doc** : `docs/adaboost.md`
+- Poids samples w_i = 1/n init | alpha = 0.5 * log((1-error)/error)
+- Mise à jour : w *= exp(-alpha * check) puis normalisation
+- Predict SAMME : scores shape (n_samples, n_classes), argmax final
 
-**Concepts clés**
-- Boosting **séquentiel** : chaque estimateur corrige les erreurs du précédent
-- Chaque sample a un poids `w_i` initialisé à `1/n`, mis à jour à chaque itération
-- Poids du modèle : `alpha = 0.5 * log((1 - error) / error)`
-- Mise à jour des poids : `w = w * exp(-alpha * check)` où `check = +1 si correct, -1 si erreur`
-- Normalisation des poids à chaque itération : `w = w / sum(w)`
-
-**Pipeline**
-1. Initialiser `w = 1/n` pour chaque sample
-2. Pour chaque estimateur : entraîner un `DecisionTreeClassifier(max_depth=1)` avec les poids courants
-3. Calculer l'erreur pondérée : `error = sum(w * (pred != y))`
-4. Calculer `alpha[i]`
-5. Mettre à jour et normaliser `w`
-6. Prédire : accumuler `alpha[i]` dans `scores[n_samples, n_classes]`, retourner `argmax`
-
-**Predict multiclasse (SAMME)**
-- `scores` shape `(n_samples, n_classes)` — accumuler `alpha[i]` pour la classe prédite
-- Indexation : `scores[np.arange(n), np.searchsorted(classes, predictions)] += alpha[i]`
-- Résultat : `classes[argmax(scores, axis=1)]`
-
-**Modifications apportées à DecisionTreeClassifier**
-- `fit(X, y, weights)` — poids propagés dans `_build_tree` et `_best_split`
-- Gini pondéré : `sum(w_k) / sum(w)` au lieu de `count_k / n`
-- Valeur en feuille : `find_mode(y, weights)` — classe avec le plus grand poids total
-- Helpers ajoutés : `gini(y, weights)`, `find_mode(y, weights)`, `compute_variance(x, weights)`
-
----
-
-### 14. Gradient Boosting
-**Type** : Supervisé — Régression
-**Fichier** : `regression_models/gradient_boosting.py`
-**Dépend de** : `DecisionTreeRegressor`
-
-**Concepts clés**
-- Boosting sequentiel : chaque arbre prédit les **résidus** du modèle précédent
-- Initialisation : F_0 = mean(y) pour tous les x
-- Mise à jour : F_{m+1} = F_m + eta * h_m(X) où h_m est entrainé sur les résidus y - F_m
-- Learning rate `eta` : hyperparamètre fixe (défaut 0.1) — petit eta = plus d'arbres nécessaires, moins d'overfitting
-
-**Pipeline**
-1. Initialiser F = mean(y)
-2. Pour chaque estimateur : calculer res = y - F, entraîner h_m sur (X, res), mettre à jour F = F + eta * h_m(X)
-3. Prédire : F_0 + sum(eta * h_m(X)) pour chaque arbre
-
-**Différence clé avec AdaBoost**
-| | AdaBoost | Gradient Boosting |
-|---|---|---|
-| Ce que corrige l'arbre suivant | Samples mal classés (poids) | Résidus (erreur de prédiction) |
-| Pondération des arbres | alpha calculé selon l'erreur | learning rate fixe |
-| Type de problème | Classification | Régression (ici) |
-
-**Points importants**
-- Arbres peu profonds (max_depth=3) pour éviter l'overfitting
-- `self.mean` stocké comme float pour initialiser les prédictions au `predict`
-- MSE identique à sklearn sur données de test
-
----
+### 14. Gradient Boosting Regressor
+**Fichier** : `regression_models/gradient_boosting.py` | **Doc** : `docs/gradient_boosting.md`
+- F_0 = mean(y) | Résidus : r = y - F | F += eta * h_m(X)
+- self.mean stocké comme float scalaire pour predict
 
 ### 15. Gradient Boosting Classifier
-**Type** : Supervisé — Classification
-**Fichier** : `classification_models/gradient_boosting_classifier.py`
-**Dépend de** : `DecisionTreeRegressor`
+**Fichier** : `classification_models/gradient_boosting_classifier.py` | **Doc** : `docs/gradient_boosting.md`
+- F représente les log-odds | p = sigmoid(F) | Pseudo-résidu : r = y - p
+- F_0 = log(p0/(1-p0)) stocké comme scalaire | Prédiction : sigmoid(F) >= 0.5
 
-**Concepts clés**
-- Même principe que le Regressor mais minimise la **cross-entropy** au lieu de la MSE
-- F représente les **log-odds** : `p = sigmoid(F)`
-- Pseudo-résidu = opposé du gradient de la cross-entropy par rapport à F : `r = y - sigmoid(F) = y - p`
-- Les arbres font de la **régression sur les résidus** dans l'espace des log-odds
+### 16. SVM Linéaire + Kernel RBF
+**Fichier** : `classification_models/svm.py` | **Doc** : `docs/svm.md`
 
-**Pipeline**
-1. Initialiser F_0 = log(p0 / (1 - p0)) où p0 = mean(y) — stocké comme scalaire float
-2. Calculer r = y - sigmoid(F_0)
-3. Pour chaque estimateur : entraîner h_m sur (X, r), mettre à jour F = F + eta * h_m(X), recalculer r = y - sigmoid(F)
-4. Prédire : p = sigmoid(F_0 + sum(eta * h_m(X))), classe = (p >= 0.5)
+**SVMClassifier (descente de gradient)**
+- Hinge loss : (1/2)||w||^2 + C * sum(max(0, 1 - y*(wx+b)))
+- Gradients sur points violants : dw = w - C*sum(y_i*x_i), db = -C*sum(y_i)
 
-**Dérivation du pseudo-résidu**
-- dL/dF = dL/dp * dp/dF = (-y/p + (1-y)/(-1/(1-p))) * p*(1-p) = p - y
-- Donc r = -dL/dF = y - p
+**KernelSVM (dual + cvxopt)**
+- Kernel RBF : K(xi, xj) = exp(-gamma * ||xi-xj||^2)
+- Dual : max sum(alpha) - (1/2)(alpha*y)^T K (alpha*y) | 0 <= alpha <= C, sum(alpha*y) = 0
+- QP : P = yy^T * K, q = -1, G/h pour contraintes alpha, A = y^T, b = 0
+- Support vectors : alpha > 1e-5 | Biais : mean(y_i - K[sv,:] @ (alpha*y))
+- cvxopt : tc='d' obligatoire | b de shape (1,1)
 
-**Points importants**
-- `self.fzero` est un **scalaire** float (pas un vecteur) pour pouvoir prédire sur X de taille quelconque
-- La cross-entropy se dérive par rapport à F (log-odds), pas par rapport à p — espace non contraint
-- Léger écart avec sklearn sur données multi-features : sklearn optimise les valeurs de feuilles
+### 17. SHAP Values (Monte Carlo)
+**Fichier** : `explainability/shap.py` | **Doc** : `docs/shap.md`
+- Shapley values : contribution marginale moyenne de chaque feature sur toutes les permutations
+- f(S, x) estimé via vecteur hybride : features S=valeurs de x, reste=valeurs d'un point background z
+- Complexité : O(n_samples * n_sampling * n_features)
 
-**Différence clé avec le Regressor**
-| | GB Regressor | GB Classifier |
-|---|---|---|
-| Loss | MSE | Cross-entropy |
-| Pseudo-résidu | y - F | y - sigmoid(F) |
-| Initialisation F_0 | mean(y) | log(p0 / (1-p0)) |
-| Prédiction finale | F directement | sigmoid(F) >= 0.5 |
+### 18. CAH (Classification Ascendante Hiérarchique)
+**Fichier** : `clustering/cah.py` | **Doc** : `docs/cah.md`
+- Ascendant : chaque point = cluster init, fusion progressive des deux plus proches
+- Pas de k à spécifier — hauteur de coupe choisie après sur le dendrogramme
 
----
+**Formule de Lance-Williams** : d(AB,C) = a*d(A,C) + b*d(B,C) + c*d(A,B) + d*|d(A,C)-d(B,C)|
 
-### 16. SVM (Support Vector Machine) — Linéaire & Noyau
-**Type** : Supervisé — Classification
-**Fichier** : `classification_models/svm.py`
-**Classes** : `SVMClassifier` (linéaire), `KernelSVM` (RBF)
+| Linkage | a | b | c | d |
+|---|---|---|---|---|
+| Single | 1/2 | 1/2 | 0 | -1/2 |
+| Complete | 1/2 | 1/2 | 0 | +1/2 |
+| Average | n1/(n1+n2) | n2/(n1+n2) | 0 | 0 |
+| Ward | (n1+n3)/(n1+n2+n3) | (n2+n3)/(n1+n2+n3) | -n3/(n1+n2+n3) | 0 |
 
-**Concepts clés communs**
-- Objectif : trouver l'hyperplan séparateur qui **maximise la marge** entre les deux classes
-- Hyperplan : w^T x + b = 0, hyperplans de support à ±1
-- Largeur de la marge : 2 / ||w||
-- Labels remappés : {0, 1} -> {-1, +1}
-
-**Soft margin (SVMClassifier — descente de gradient)**
-- Slack variable xi_i = max(0, 1 - y_i * (w^T x_i + b))
-- Hinge loss : L = (1/2) ||w||^2 + C * sum(max(0, 1 - y_i * (w^T x_i + b)))
-- Gradients sur les points violants : dL/dw = w - C * sum(y_i * x_i), dL/db = -C * sum(y_i)
-- Masque booléen pour isoler les points violants : np.where(y * dist < 1)
-
-**Kernel SVM (KernelSVM — formulation duale + cvxopt)**
-- Motivation : données non linéairement séparables → projection dans un espace de grande dimension via phi(x)
-- Kernel trick : remplacer x_i^T x_j par K(x_i, x_j) = phi(x_i)^T phi(x_j) sans calculer phi explicitement
-- Condition KKT : w = sum(alpha_i * y_i * x_i) → les données n'apparaissent que sous forme de produits scalaires
-- Problème dual : maximiser sum(alpha_i) - (1/2) * sum_ij(alpha_i * alpha_j * y_i * y_j * K_ij)
-  sous : 0 <= alpha_i <= C et sum(alpha_i * y_i) = 0
-
-**Noyau RBF (Gaussien)**
-- K(x_i, x_j) = exp(-gamma * ||x_i - x_j||^2)
-- Mesure de similarité : proche de 1 si points voisins, proche de 0 si points éloignés
-- gamma grand : gaussiennes étroites, frontière très flexible ; gamma petit : frontière plus lisse
-
-**Pipeline KernelSVM**
-1. Remapper y vers {-1, +1}
-2. Calculer la matrice de Gram K de shape (n, n) : K_ij = exp(-gamma * ||x_i - x_j||^2)
-3. Formuler le QP (P = y*y^T * K, q = -1, G/h pour 0<=alpha<=C, A=y^T, b=0)
-4. Résoudre avec cvxopt → alpha de shape (n,)
-5. Support vectors : alpha_i > 1e-5
-6. Biais : b = mean(y_i - sum_j(alpha_j * y_j * K_ij)) sur les support vectors
-7. Prédiction : sign(K_test @ (alpha * y) + b), remappé vers {0, 1}
-
-**Points importants**
-- cvxopt attend des matrices float64 : passer `tc='d'` à chaque `matrix()`
-- `b` pour cvxopt doit être de shape (1, 1), pas un scalaire
-- Support vectors : les seuls points avec alpha_i > 0 (les autres ont contribution nulle)
-- Prédiction : signe de f(x) = sum(alpha_i * y_i * K(x_i, x)) + b
-
-### 17. SHAP Values (Monte Carlo par permutations)
-**Type** : Explicabilité — modèle-agnostique
-**Fichier** : `explainability/shap.py`
-
-**Concepts clés**
-- Basé sur les Shapley values de la théorie des jeux coopératifs
-- La valeur SHAP de la feature i mesure sa contribution marginale moyenne sur toutes les permutations possibles
-- Formule exacte : shap(i) = sum over S not containing i of [ |S|! * (n-|S|-1)! / n! * (f(S u {i}, x) - f(S, x)) ]
-- f(S, x) = prédiction en fixant les features de S aux valeurs de x, features hors S remplacées par un point du background
-
-**Estimation de f(S, x)**
-- Background dataset Z : m exemples tirés aléatoirement du dataset
-- Pour un point z du background : construire un vecteur hybride — features dans S prennent les valeurs de x, features hors S gardent les valeurs de z
-- f(S, x) ≈ prediction(vecteur hybride)
-
-**Algorithme Monte Carlo par permutations**
-1. Pour chaque point x à expliquer :
-2. Pour chaque itération : tirer un z aléatoire dans Z, générer une permutation aléatoire des n features
-3. Parcourir la permutation en ajoutant les features une par une depuis z vers x
-4. Contribution marginale de la feature j = prediction(après ajout de j) - prediction(avant ajout de j)
-5. Accumuler et moyenner sur n_sampling itérations
-
-**Pourquoi les permutations sont équivalentes aux coalitions**
-- Chaque permutation définit implicitement une coalition S = features arrivant avant i
-- Moyenner sur toutes les permutations = moyenner sur toutes les coalitions avec le bon poids w(S)
-
-**Points importants**
-- Complexité : O(n_samples * n_sampling * n_features) — linéaire en tout, tractable
-- Validation : ranking identique à shap.KernelExplainer sur diabetes dataset
-- Pour la régression : model.predict ; pour la classification : model.predict_proba
-- Convergence : augmenter n_sampling et background_size pour réduire la variance
+- history : liste de tuples (idx1, idx2, distance, taille) — n-1 fusions
+- Après mise à jour D : forcer D[idx1,idx1] = inf (évite auto-fusion)
+- cut(height) : rejouer history, s'arrêter quand distance > height
 
 ---
 
 ## Prochains algorithmes suggérés
 
 ### Niveau 2 — Clustering & Réduction de dimension
-- **Hierarchical Clustering** — dendrogramme, linkage (single/complete/average), pas besoin de fixer k
 - **GMM (Gaussian Mixture Models)** — algorithme EM complet, pendant probabiliste de K-Means
 - **t-SNE** — réduction de dimension non-linéaire, complément à la PCA
 

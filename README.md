@@ -36,6 +36,7 @@ Implementations are written in **Python**, using only low-level numerical librar
 | 15 | Gradient Boosting Classifier | Supervised — Classification | `classification_models/gradient_boosting_classifier.py` | [doc](docs/gradient_boosting.md) |
 | 16 | SVM (Linear + Kernel RBF) | Supervised — Classification | `classification_models/svm.py` | [doc](docs/svm.md) |
 | 17 | SHAP Values | Explainability | `explainability/shap.py` | [doc](docs/shap.md) |
+| 18 | CAH (Hierarchical Clustering) | Unsupervised — Clustering | `clustering/cah.py` | [doc](docs/cah.md) |
 
 ---
 

@@ -22,6 +22,8 @@ where:
 - $S$: a coalition not containing feature $i$
 - $f(S, x)$: model prediction when only features in $S$ take the values of $x$, and all other features are drawn from a background distribution
 
+The weight before score difference shows the probability of have the feature F to this specifice position considering all possible permutations
+
 ---
 
 ## Estimating $f(S, x)$ with a Background Dataset

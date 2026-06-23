@@ -92,6 +92,7 @@ class KMeans:
 if __name__ == "__main__":
     import sys
     from pathlib import Path
+
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
     import numpy as np
@@ -99,7 +100,7 @@ if __name__ == "__main__":
     from sklearn.datasets import make_blobs
     from sklearn.metrics import adjusted_rand_score
 
-    X, y_true = make_blobs(n_samples=300, centers=3, cluster_std=0.8, random_state=42)
+    X, y_true = make_blobs(n_samples=300, centers=3, cluster_std=0.8, random_state=42)  # type: ignore
 
     custom = KMeans(k=3, max_iterations=100)
     pred_custom = custom.fit(X)

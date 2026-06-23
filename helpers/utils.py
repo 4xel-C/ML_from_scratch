@@ -20,7 +20,7 @@ def gini(y: NDArray, weights: Optional[NDArray] = None) -> float:
     else:
         wk = counts / y.shape[0]
 
-    gini = 1 - np.sum(wk**2)
+    gini = float(1 - np.sum(wk**2))
     return gini
 
 

@@ -34,6 +34,8 @@ Initialisation with  neutral parameters:
 import numpy as np
 from numpy.typing import NDArray
 
+from helpers import multivariate_gaussian_likelihood
+
 
 class GMM:
     def __init__(self, k: int, max_iterations: int = 100, tol: float = 1e-4):
@@ -58,11 +60,41 @@ class GMM:
         # starting mixing weights
         self.pi_k = np.full(self.k, 1 / self.k)
 
-        # Compute the global loglikelihood
-        p_x = ...
+        # Initialisation of the Rik matrix
+        self.r = np.full((self.n, self.k), 0)
 
         # EM iterations
         for iterations in range(self.max_iterations):
+            # Compute all likelihood for all points and clusters
+            gaussian_likelihood = np.zeros((self.n, self.k))
+
+            # Expectation
+            for k in range(self.k):
+                difference = X - self.centroids[k]
+
+                mahalanobis = np.sum(
+                    difference @ np.linalg.inv(self.covariances[k]) * difference, axis=1
+                )
+
+                gaussian_likelihood[:, k] = (
+                    1
+                    / np.sqrt(
+                        ((2 * np.pi) ** self.p) * np.linalg.det(self.covariances[k])
+                    )
+                    * np.exp(-0.5 * mahalanobis)
+                )
+
+            self.r = gaussian_likelihood * self.pi_k / self.pi_k @ gaussian_likelihood
+
+            # Maximization: update the clusters parameters
+            for k in range(self.k):
+                # Centroids
+                self.centroids[k] = self.r[:, k] * X / (np.sum(self.r[:, k]))
+
+                # Covariance matrix
+                X_weighted = np.sqrt(self.r[:, k]) * (X - self.centroids[k])
+                self.covariances[k] = (X_weighted @ X_weighted) / np.sum(self.r[:, k])
+
             ...
 
         ...

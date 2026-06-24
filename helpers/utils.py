@@ -47,3 +47,18 @@ def compute_variance(x: NDArray, weights: Optional[NDArray] = None) -> float:
     variance = np.sum(weights * (x - mean) ** 2) / sum(weights)
 
     return variance
+
+
+def multivariate_gaussian_likelihood(x: NDArray, mu: NDArray, sigma: NDArray):
+    d = len(x)
+
+    diff = x - mu
+
+    det_sigma = np.linalg.det(sigma)
+    inv_sigma = np.linalg.inv(sigma)
+
+    norm_constant = 1 / np.sqrt(((2 * np.pi) ** d) * det_sigma)
+
+    exponent = -0.5 * diff.T @ inv_sigma @ diff
+
+    return norm_constant * np.exp(exponent)

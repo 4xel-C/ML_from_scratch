@@ -84,7 +84,11 @@ class GMM:
                     * np.exp(-0.5 * mahalanobis)
                 )
 
-            self.r = gaussian_likelihood * self.pi_k / self.pi_k @ gaussian_likelihood
+            self.r = (
+                gaussian_likelihood
+                * self.pi_k
+                / (gaussian_likelihood @ self.pi_k)[:, np.newaxis]
+            )
 
             # Maximization: update the clusters parameters
             for k in range(self.k):

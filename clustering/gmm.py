@@ -31,10 +31,14 @@ Initialisation with  neutral parameters:
     - p(k): 1/K
 """
 
+import sys
+from pathlib import Path
+from typing import Tuple
+
 import numpy as np
 from numpy.typing import NDArray
 
-from helpers import multivariate_gaussian_likelihood
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 
 class GMM:
@@ -92,6 +96,11 @@ class GMM:
                 / (gaussian_likelihood @ self.pi_k)[:, np.newaxis]
             )
 
+            # Compute the log likelihood of the model
+            loglikelihood = np.sum(
+                np.log(np.sum(gaussian_likelihood * self.pi_k, axis=1))
+            )
+
             # Maximization: update the clusters parameters
             for k in range(self.k):
                 # Centroids
@@ -108,15 +117,45 @@ class GMM:
             self.pi_k = self.r.sum(axis=0) / self.n
 
             # compute log likelihood: first sum the likelihood on all clusters for each point, and compute the total likelihood.
-            loglikelihood = np.sum(
-                np.log(np.sum(gaussian_likelihood * self.pi_k, axis=1))
-            )
-
             if np.abs(loglikelihood - self.global_likelihood) < self.tol:
                 break
             self.global_likelihood = loglikelihood
 
-    def predict(self, X): ...
+    def predict(self, X: NDArray) -> Tuple[NDArray, NDArray]:
+        """To predict, we recompute the responsibility for each cluster for each point (Probability of cluster k knowing data point x)
+
+        Args:
+            X (NDArray): The data to clusterize
+
+        Return:
+            Tuple[NDArray, NDArray]: The clusters assignation, and the probabilities
+
+        """
+
+        # Compute all likelihood for all points and clusters
+        gaussian_likelihood = np.zeros((len(X), self.k))
+
+        # Expectation
+        for k in range(self.k):
+            difference = X - self.centroids[k]
+
+            mahalanobis = np.sum(
+                difference @ np.linalg.inv(self.covariances[k]) * difference, axis=1
+            )
+
+            gaussian_likelihood[:, k] = (
+                1
+                / np.sqrt(((2 * np.pi) ** self.p) * np.linalg.det(self.covariances[k]))
+                * np.exp(-0.5 * mahalanobis)
+            )
+
+        probas = (
+            gaussian_likelihood
+            * self.pi_k
+            / (gaussian_likelihood @ self.pi_k)[:, np.newaxis]
+        )
+
+        return np.argmax(probas, axis=1), probas
 
 
 if __name__ == "__main__":
@@ -126,17 +165,70 @@ if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
     import numpy as np
-    from sklearn.cluster import KMeans as SklearnKMeans
     from sklearn.datasets import make_blobs
-    from sklearn.metrics import adjusted_rand_score
+    from sklearn.metrics import (
+        adjusted_rand_score,
+        normalized_mutual_info_score,
+        silhouette_score,
+    )
+    from sklearn.mixture import GaussianMixture
 
-    X, y_true = make_blobs(n_samples=30, centers=3, cluster_std=0.8, random_state=42)  # type: ignore
+    # Make a harder dataset: overlapping + anisotropic clusters.
+    np.random.seed(42)
+    X, y_true = make_blobs(  # type: ignore
+        n_samples=100,
+        centers=3,
+        cluster_std=[2.4, 1.9, 2.1],
+        random_state=42,
+    )
 
-    clust = GMM(k=3)
+    transform = np.array([[0.7, -0.6], [0.45, 0.9]])
+    X = X @ transform
+    X += np.random.normal(loc=0.0, scale=0.3, size=X.shape)
 
-    print("Size of the data: ", X.shape)
+    # Fit custom GMM.
+    custom = GMM(k=3, max_iterations=300, tol=1e-6)
+    custom.fit(X)
+    custom_labels, custom_probas = custom.predict(X)
+
+    # Fit sklearn GMM on the same data.
+    sk = GaussianMixture(
+        n_components=3,
+        covariance_type="full",
+        max_iter=300,
+        tol=1e-6,
+        random_state=42,
+    )
+    sk.fit(X)
+    sk_labels = sk.predict(X)
+    sk_probas = sk.predict_proba(X)
+
+    # Quantitative comparison.
+    custom_ari = adjusted_rand_score(y_true, custom_labels)
+    sk_ari = adjusted_rand_score(y_true, sk_labels)
+
+    custom_nmi = normalized_mutual_info_score(y_true, custom_labels)
+    sk_nmi = normalized_mutual_info_score(y_true, sk_labels)
+
+    custom_sil = silhouette_score(X, custom_labels)
+    sk_sil = silhouette_score(X, sk_labels)
+
+    print("Dataset shape:", X.shape)
+    print("Hard setup: overlapping + anisotropic Gaussian clusters")
     print()
-
-    clust.fit(X)
-
-    print(clust.pi_k)
+    print("=== Comparison vs sklearn GaussianMixture ===")
+    print(
+        f"Custom GMM  | ARI: {custom_ari:.4f} | NMI: {custom_nmi:.4f} | Silhouette: {custom_sil:.4f}"
+    )
+    print(
+        f"sklearn GMM | ARI: {sk_ari:.4f} | NMI: {sk_nmi:.4f} | Silhouette: {sk_sil:.4f}"
+    )
+    print()
+    print(f"Custom total log-likelihood:  {custom.global_likelihood:.3f}")
+    print(f"sklearn total log-likelihood: {sk.lower_bound_ * len(X):.3f}")
+    print()
+    print("First 5 responsibilities (custom):")
+    print(custom_probas[:5])
+    print()
+    print("First 5 responsibilities (sklearn):")
+    print(sk_probas[:5])

@@ -54,6 +54,8 @@ class GMM:
         # starting parameters
         self.centroids = X[centroids_idx]
 
+        self.global_likelihood = -np.inf
+
         # Creation of a tenso of size (k, p, p)
         self.covariances = np.array([np.identity(self.p) for _ in range(self.k)])
 
@@ -93,15 +95,26 @@ class GMM:
             # Maximization: update the clusters parameters
             for k in range(self.k):
                 # Centroids
-                self.centroids[k] = self.r[:, k] * X / (np.sum(self.r[:, k]))
+                self.centroids[k] = (self.r[:, k, np.newaxis] * X).sum(axis=0) / np.sum(
+                    self.r[:, k]
+                )
 
                 # Covariance matrix
-                X_weighted = np.sqrt(self.r[:, k]) * (X - self.centroids[k])
-                self.covariances[k] = (X_weighted @ X_weighted) / np.sum(self.r[:, k])
+                X_weighted = np.sqrt(self.r[:, k])[:, np.newaxis] * (
+                    X - self.centroids[k]
+                )
+                self.covariances[k] = (X_weighted.T @ X_weighted) / np.sum(self.r[:, k])
 
-            ...
+            self.pi_k = self.r.sum(axis=0) / self.n
 
-        ...
+            # compute log likelihood: first sum the likelihood on all clusters for each point, and compute the total likelihood.
+            loglikelihood = np.sum(
+                np.log(np.sum(gaussian_likelihood * self.pi_k, axis=1))
+            )
+
+            if np.abs(loglikelihood - self.global_likelihood) < self.tol:
+                break
+            self.global_likelihood = loglikelihood
 
     def predict(self, X): ...
 

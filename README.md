@@ -37,6 +37,7 @@ Implementations are written in **Python**, using only low-level numerical librar
 | 16 | SVM (Linear + Kernel RBF) | Supervised — Classification | `classification_models/svm.py` | [doc](docs/svm.md) |
 | 17 | SHAP Values | Explainability | `explainability/shap.py` | [doc](docs/shap.md) |
 | 18 | CAH (Hierarchical Clustering) | Unsupervised — Clustering | `clustering/cah.py` | [doc](docs/cah.md) |
+| 19 | GMM (Gaussian Mixture Model) | Unsupervised — Clustering | `clustering/gmm.py` | [doc](docs/gmm.md) |
 
 ---
 
@@ -47,7 +48,7 @@ ML_from_scratch/
 ├── regression_models/         # Linear, Lasso, Ridge, Decision Tree, Gradient Boosting
 ├── classification_models/     # Logistic, KNN, Naive Bayes, Decision Tree, Random Forest,
 │                              # AdaBoost, Gradient Boosting, SVM
-├── clustering/                # KMeans, DBSCAN
+├── clustering/                # KMeans, DBSCAN, CAH, GMM
 ├── dimensionality_reduction/  # PCA
 ├── explainability/            # SHAP
 ├── bases/                     # Shared base classes (DecisionTreeBase, Node)

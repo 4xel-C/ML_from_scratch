@@ -167,12 +167,22 @@ Chaque implémentation suit ce processus :
 - Après mise à jour D : forcer D[idx1,idx1] = inf (évite auto-fusion)
 - cut(height) : rejouer history, s'arrêter quand distance > height
 
+### 19. GMM (Gaussian Mixture Model)
+**Fichier** : `clustering/gmm.py` | **Doc** : `docs/gmm.md`
+- Pendant probabiliste de K-Means : assignation soft (probabilités) vs hard
+- p(x) = Σ π_k · N(x | μ_k, Σ_k) | Paramètres : μ_k, Σ_k, π_k par cluster
+- EM : E-step r(i,k) = π_k·N(x_i|μ_k,Σ_k) / Σ_j π_j·N(x_i|μ_j,Σ_j) (Bayes)
+- M-step : μ_k = barycentre pondéré, Σ_k = covariance pondérée, π_k = Σ_i r(i,k)/n
+- Mahalanobis vectorisé : `np.sum(diff @ inv(Σ_k) * diff, axis=1)` shape (n,)
+- Covariance via sqrt trick : `X_w.T @ X_w` avec X_w = sqrt(r[:,k])[:,newaxis] * diff
+- Convergence : |L_new - L_old| < tol sur log-vraisemblance L = Σ_i log(Σ_k π_k·N(x_i|μ_k,Σ_k))
+- Init : μ_k = points aléatoires, Σ_k = I_p, π_k = 1/K
+
 ---
 
 ## Prochains algorithmes suggérés
 
 ### Niveau 2 — Clustering & Réduction de dimension
-- **GMM (Gaussian Mixture Models)** — algorithme EM complet, pendant probabiliste de K-Means
 - **t-SNE** — réduction de dimension non-linéaire, complément à la PCA
 
 ### Niveau 3 — Classifieurs

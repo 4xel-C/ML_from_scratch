@@ -38,6 +38,7 @@ Implementations are written in **Python**, using only low-level numerical librar
 | 17 | SHAP Values | Explainability | `explainability/shap.py` | [doc](docs/shap.md) |
 | 18 | CAH (Hierarchical Clustering) | Unsupervised — Clustering | `clustering/cah.py` | [doc](docs/cah.md) |
 | 19 | GMM (Gaussian Mixture Model) | Unsupervised — Clustering | `clustering/gmm.py` | [doc](docs/gmm.md) |
+| 20 | t-SNE | Unsupervised — Dimensionality Reduction | `dimensionality_reduction/tsne.py` | [doc](docs/tsne.md) |
 
 ---
 
@@ -49,7 +50,7 @@ ML_from_scratch/
 ├── classification_models/     # Logistic, KNN, Naive Bayes, Decision Tree, Random Forest,
 │                              # AdaBoost, Gradient Boosting, SVM
 ├── clustering/                # KMeans, DBSCAN, CAH, GMM
-├── dimensionality_reduction/  # PCA
+├── dimensionality_reduction/  # PCA, t-SNE
 ├── explainability/            # SHAP
 ├── bases/                     # Shared base classes (DecisionTreeBase, Node)
 ├── helpers/                   # Activation functions, utilities, exceptions

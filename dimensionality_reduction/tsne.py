@@ -36,7 +36,44 @@ class TSNE:
         self.max_iterations = max_iterations
         self.binary_max_iterations = binary_max_iterations
 
-    def fit_transform(self, X: NDArray) -> NDArray: ...
+    def fit_transform(self, X: NDArray) -> NDArray:
+        n = len(X)
+
+        D = self._compute_distances(X)
+        P = self._computy_high_dimensionality_proba(D)
+
+        # Initialize Y (low dimensionality coordinates randomly with normal distribution) -> keep the value small
+        # to have a high loss function as the loss function dosn't penalize distant points that much.
+        Y = np.random.randn(n, self.n_dimensions) * 1e-4
+
+        # initialization of the loss
+        loss = np.inf
+
+        # optimization loop
+        for i in range(self.max_iterations):
+            # Compute probabilities in low dimension
+            Q = self._compute_low_dimensionnality_probas(Y)
+
+            # Compute the loss
+            new_loss = np.sum(
+                P * np.log(np.clip(P, 1e-10, None) / np.clip(Q, 1e-10, None))
+            )
+
+            # Stop condition with tolerance
+            if np.abs(loss - new_loss) < self.tolerance:
+                break
+            else:
+                loss = new_loss
+
+            gradient = self._compute_gradient(Y, P, Q)
+
+            # update Y
+            Y += -self.learning_rate * gradient
+
+            if i == self.max_iterations - 1:
+                print("Algorithm did not converge!")
+
+        return Y
 
     def _compute_distances(self, X: NDArray) -> NDArray:
         return np.sum((X[np.newaxis, :, :] - X[:, np.newaxis, :]) ** 2, axis=2)
@@ -114,7 +151,7 @@ class TSNE:
             NDArray: The probabilities matrix for high dimensionnality.
         """
         # Ensure the diagonal has infinite value for the probability calculation (probability for a point to be neighbor to itself = 0)
-        sigma_left = np.sqrt(max(D))
+        sigma_left = np.sqrt(np.max(D))
         np.fill_diagonal(D, np.inf)
 
         probas_matrix = np.zeros_like(D)
@@ -148,3 +185,65 @@ class TSNE:
         probas_q = similarities / np.sum(similarities)
 
         return probas_q
+
+    def _compute_gradient(self, Y: NDArray, P: NDArray, Q: NDArray) -> NDArray:
+        """Compute the Kullback Leiber divergence loss gradient.
+
+        Args:
+            Y (NDArray): The coordinates of the points in the lower dimension space
+            P (NDArray): The neighborhood probability matrix in the higher dimension space
+            Q (NDArray): The neighborhood probability in the lower dimension space
+        """
+        # shape (n, n)
+        D_low = self._compute_distances(Y)
+
+        # shape (n, n, p)
+        difference = Y[:, np.newaxis, :] - Y[np.newaxis, :, :]
+
+        # Sum on the j axis: gradient of shape (n, n_dimensions)
+        gradient = 4 * np.sum(
+            (P - Q)[:, :, np.newaxis]
+            * (difference)
+            * (1 + (D_low[:, :, np.newaxis])) ** -1,
+            axis=1,
+        )
+
+        return gradient
+
+
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+    from sklearn.datasets import load_digits
+    from sklearn.manifold import TSNE as SklearnTSNE
+    from sklearn.preprocessing import StandardScaler
+
+    # Load a subset of digits dataset (10 classes, 64 features)
+    digits = load_digits()
+    X, y = digits.data[:300], digits.target[:300]  # type: ignore
+    X = StandardScaler().fit_transform(X)
+
+    # Custom TSNE
+    tsne = TSNE(perplexity=30, n_dimensions=2, learning_rate=200, max_iterations=500)
+    Y_custom = tsne.fit_transform(X)
+
+    # Sklearn TSNE
+    Y_sklearn = SklearnTSNE(
+        n_components=2, perplexity=30, learning_rate=200, max_iter=500, random_state=42
+    ).fit_transform(X)
+
+    # Plot side by side
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+
+    for ax, Y, title in zip(
+        axes, [Y_custom, Y_sklearn], ["Custom t-SNE", "Sklearn t-SNE"]
+    ):
+        scatter = ax.scatter(Y[:, 0], Y[:, 1], c=y, cmap="tab10", s=15, alpha=0.8)
+        ax.set_title(title)
+        ax.set_xlabel("Dimension 1")
+        ax.set_ylabel("Dimension 2")
+        plt.colorbar(scatter, ax=ax, label="Digit class")
+
+    plt.tight_layout()
+    plt.savefig("tsne_comparison.png", dpi=150)
+    plt.show()
+    print("Done. Plot saved to tsne_comparison.png")

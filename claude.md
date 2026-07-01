@@ -178,12 +178,21 @@ Chaque implémentation suit ce processus :
 - Convergence : |L_new - L_old| < tol sur log-vraisemblance L = Σ_i log(Σ_k π_k·N(x_i|μ_k,Σ_k))
 - Init : μ_k = points aléatoires, Σ_k = I_p, π_k = 1/K
 
+### 20. t-SNE (t-Distributed Stochastic Neighbor Embedding)
+**Fichier** : `dimensionality_reduction/tsne.py` | **Doc** : `docs/tsne.md`
+- Réduction non-linéaire : préserve la structure locale (petites distances) vs PCA (variance globale)
+- Espace original : p_{j|i} = softmax gaussien avec σ_i adapté par perplexité (recherche binaire)
+- Perplexité = 2^H(P_i) — contrôle le nombre effectif de voisins, σ_i adapté à la densité locale
+- Symétrisation : p_{ij} = (p_{j|i} + p_{i|j}) / 2n — distribution globale sur les paires (somme = 1)
+- Espace réduit : q_{ij} = noyau t-Student (1+||yi-yj||²)^{-1} / Σ_{k≠l} — queues lourdes vs gaussienne
+- Crowding problem : queues lourdes forcent les clusters à s'écarter en 2D sans être trop pénalisés
+- Loss : KL(P||Q) = Σ_{ij} p_{ij} log(p_{ij}/q_{ij}) — pénalise surtout les voisins proches mal représentés
+- Gradient : 4 Σ_j (p_{ij}-q_{ij})(yi-yj)(1+||yi-yj||²)^{-1} — shape (n, n_dimensions) via broadcasting
+- Init : Y ~ N(0, 1e-4) (valeurs petites pour fort gradient initial) | sigma_right = sqrt(max(D))
+
 ---
 
 ## Prochains algorithmes suggérés
-
-### Niveau 2 — Clustering & Réduction de dimension
-- **t-SNE** — réduction de dimension non-linéaire, complément à la PCA
 
 ### Niveau 3 — Classifieurs
 - **Perceptron** — brique de base des réseaux de neurones

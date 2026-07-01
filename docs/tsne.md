@@ -49,7 +49,7 @@ $$\text{Perplexity}(P_i) = 2^{H(P_i)} \quad \text{where} \quad H(P_i) = -\sum_j 
 - High entropy → uniform distribution → many effective neighbors → large $\sigma_i$ (sparse zone)
 - Low entropy → peaked distribution → few effective neighbors → small $\sigma_i$ (dense zone)
 
-Binary search adjusts $\sigma_i$ until $\text{Perplexity}(P_i) \approx \text{perplexity\_target}$ (default: 30).  
+Binary search adjusts $\sigma_i$ until $\text{Perplexity}(P_i) \approx \text{perplexity target}$ (default: 30).  
 Search bounds: $\sigma \in [10^{-10},\ \sqrt{\max(D)}]$ to adapt to the scale of the data.
 
 ---

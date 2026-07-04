@@ -39,6 +39,7 @@ Implementations are written in **Python**, using only low-level numerical librar
 | 18 | CAH (Hierarchical Clustering) | Unsupervised — Clustering | `clustering/cah.py` | [doc](docs/cah.md) |
 | 19 | GMM (Gaussian Mixture Model) | Unsupervised — Clustering | `clustering/gmm.py` | [doc](docs/gmm.md) |
 | 20 | t-SNE | Unsupervised — Dimensionality Reduction | `dimensionality_reduction/tsne.py` | [doc](docs/tsne.md) |
+| 21 | CatBoost | Supervised — Classification | `classification_models/catboost.py` | [doc](docs/catboost.md) |
 
 ---
 
@@ -48,7 +49,7 @@ Implementations are written in **Python**, using only low-level numerical librar
 ML_from_scratch/
 ├── regression_models/         # Linear, Lasso, Ridge, Decision Tree, Gradient Boosting
 ├── classification_models/     # Logistic, KNN, Naive Bayes, Decision Tree, Random Forest,
-│                              # AdaBoost, Gradient Boosting, SVM
+│                              # AdaBoost, Gradient Boosting, SVM, CatBoost
 ├── clustering/                # KMeans, DBSCAN, CAH, GMM
 ├── dimensionality_reduction/  # PCA, t-SNE
 ├── explainability/            # SHAP

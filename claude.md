@@ -178,7 +178,17 @@ Chaque implémentation suit ce processus :
 - Convergence : |L_new - L_old| < tol sur log-vraisemblance L = Σ_i log(Σ_k π_k·N(x_i|μ_k,Σ_k))
 - Init : μ_k = points aléatoires, Σ_k = I_p, π_k = 1/K
 
-### 20. t-SNE (t-Distributed Stochastic Neighbor Embedding)
+### 20. CatBoost
+**Fichier** : `classification_models/catboost.py` | **Doc** : `docs/catboost.md`
+- Hérite de `GradientBoostingClassifier` — surcharge `fit` et `predict` uniquement
+- Ordered Target Encoding : encode cat $x_i^k$ avec stats cumulatives des points avant $i$ dans une permutation aléatoire → évite le target leakage
+- Formule : $\hat{x}_i^k = (\sum_{j<i} \mathbf{1}[x_j^k=c] \cdot y_j + a \cdot p) / (\sum_{j<i} \mathbf{1}[x_j^k=c] + a)$
+- Bayesian smoothing : $a$ = poids du prior $p=\mathbb{E}[y]$ — catégorie inconnue → retourne $p$
+- Permutation unique fixe (vs une par arbre dans CatBoost réel) — Ordered Boosting non implémenté
+- `self.cat_values[idx][mod]` = moyenne conditionnelle finale stockée au fit → utilisée dans predict
+- `self.prior` = mean(y) stocké au fit → fallback pour modalités inconnues au predict
+
+### 21. t-SNE (t-Distributed Stochastic Neighbor Embedding)
 **Fichier** : `dimensionality_reduction/tsne.py` | **Doc** : `docs/tsne.md`
 - Réduction non-linéaire : préserve la structure locale (petites distances) vs PCA (variance globale)
 - Espace original : p_{j|i} = softmax gaussien avec σ_i adapté par perplexité (recherche binaire)

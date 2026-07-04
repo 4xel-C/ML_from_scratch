@@ -85,7 +85,7 @@ $$\hat{y} = \mathbf{1}[\sigma(F_M(x)) \geq 0.5]$$
 
 At prediction time, $y$ is not available. The encoding uses the **final conditional means** stored during `fit`:
 
-$$\hat{x}^k = \frac{\text{catcumsum}[c]}{\text{cat\_count}[c]}$$
+$$\hat{x}^k = \frac{\text{catcumsum}[c]}{\text{catcount}[c]}$$
 
 For an **unknown category** (never seen in training): fall back to the prior $p$.
 

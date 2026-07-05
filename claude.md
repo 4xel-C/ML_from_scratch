@@ -178,7 +178,17 @@ Chaque implémentation suit ce processus :
 - Convergence : |L_new - L_old| < tol sur log-vraisemblance L = Σ_i log(Σ_k π_k·N(x_i|μ_k,Σ_k))
 - Init : μ_k = points aléatoires, Σ_k = I_p, π_k = 1/K
 
-### 20. CatBoost
+### 20. Perceptron
+**Fichier** : `classification_models/perceptron.py` | **Doc** : `docs/perceptron.md`
+- Classificateur binaire : $\hat{y} = \mathbf{1}[w^T x + b \geq 0]$ — fonction de Heaviside (pas sigmoid)
+- Règle de mise à jour : $w \leftarrow w + \eta (y_i - \hat{y}_i) x_i$, $b \leftarrow b + \eta (y_i - \hat{y}_i)$
+- Mise à jour **online** (point par point) — obligatoire pour le théorème de convergence
+- Convergence garantie ssi données **linéairement séparables** — sinon boucle indéfiniment
+- Initialisation $w=0$ valide (un seul neurone → pas de problème de symétrie contrairement au MLP)
+- Pas de loss explicite — correction uniquement sur les erreurs ($e_i \in \{-1, 0, +1\}$)
+- Arrêt : aucun poids modifié pendant une epoch complète, ou max_epochs atteint
+
+### 22. CatBoost
 **Fichier** : `classification_models/catboost.py` | **Doc** : `docs/catboost.md`
 - Hérite de `GradientBoostingClassifier` — surcharge `fit` et `predict` uniquement
 - Ordered Target Encoding : encode cat $x_i^k$ avec stats cumulatives des points avant $i$ dans une permutation aléatoire → évite le target leakage
@@ -188,7 +198,7 @@ Chaque implémentation suit ce processus :
 - `self.cat_values[idx][mod]` = moyenne conditionnelle finale stockée au fit → utilisée dans predict
 - `self.prior` = mean(y) stocké au fit → fallback pour modalités inconnues au predict
 
-### 21. t-SNE (t-Distributed Stochastic Neighbor Embedding)
+### 23. t-SNE (t-Distributed Stochastic Neighbor Embedding)
 **Fichier** : `dimensionality_reduction/tsne.py` | **Doc** : `docs/tsne.md`
 - Réduction non-linéaire : préserve la structure locale (petites distances) vs PCA (variance globale)
 - Espace original : p_{j|i} = softmax gaussien avec σ_i adapté par perplexité (recherche binaire)

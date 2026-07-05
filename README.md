@@ -40,6 +40,7 @@ Implementations are written in **Python**, using only low-level numerical librar
 | 19 | GMM (Gaussian Mixture Model) | Unsupervised — Clustering | `clustering/gmm.py` | [doc](docs/gmm.md) |
 | 20 | t-SNE | Unsupervised — Dimensionality Reduction | `dimensionality_reduction/tsne.py` | [doc](docs/tsne.md) |
 | 21 | CatBoost | Supervised — Classification | `classification_models/catboost.py` | [doc](docs/catboost.md) |
+| 22 | Perceptron | Supervised — Classification | `classification_models/perceptron.py` | [doc](docs/perceptron.md) |
 
 ---
 

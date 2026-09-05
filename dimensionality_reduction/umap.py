@@ -39,4 +39,6 @@ class UMAP:
         knn_distances: NDArray = np.full((len(X), self.n_neighbors), -1)
 
         # compute the distances using broadcasting
-        distances = np.sum((X[np.newaxis, :, :] - X[:, np.newaxis, :]) ** 2, axis=2)
+        distances = np.sqrt(
+            np.sum((X[np.newaxis, :, :] - X[:, np.newaxis, :]) ** 2, axis=2)
+        )

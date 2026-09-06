@@ -210,12 +210,20 @@ Chaque implémentation suit ce processus :
 - Gradient : 4 Σ_j (p_{ij}-q_{ij})(yi-yj)(1+||yi-yj||²)^{-1} — shape (n, n_dimensions) via broadcasting
 - Init : Y ~ N(0, 1e-4) (valeurs petites pour fort gradient initial) | sigma_right = sqrt(max(D))
 
+### 24. UMAP (Uniform Manifold Approximation and Projection)
+**Fichier** : `dimensionality_reduction/umap.py` | **Doc** : `docs/umap.md`
+- Graphe de voisinage pondéré : w_ij = exp(-(d_ij - rho_i) / sigma_i) | rho_i = distance au plus proche voisin
+- sigma_i calibré par recherche binaire : sum(w_ij) = log2(k) — nombre effectif de voisins
+- Symétrisation fuzzy union : p_ij = w_ij + w_ji - w_ij * w_ji (union probabiliste)
+- Espace réduit : q_ij = 1/(1 + a*d^(2b)) | a,b fittés depuis min_dist via curve_fit
+- Loss BCE sur les arêtes : -p*log(q) - (1-p)*log(1-q) — préserve structure locale ET globale
+- Gradient : 2ab*d^(2b-1)*(p(1-q)-q(1-p)) / (q(1-q)*(1+a*d^(2b))^2) * (yi-yj)/d
+- Negative sampling : k voisins attractifs + n_negative_sample répulsifs aléatoires par point
+- Sparse matrix scipy (csr_matrix) | .multiply() pour produit élément par élément (pas *)
+
 ---
 
 ## Prochains algorithmes suggérés
-
-### Niveau 3 — Classifieurs
-- **Perceptron** — brique de base des réseaux de neurones
 
 ### Niveau 3 — Réseaux de neurones
 - **MLP (Multi-Layer Perceptron)** — backpropagation, couches denses

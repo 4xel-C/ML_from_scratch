@@ -86,7 +86,7 @@ class UMAP:
 
         # Symmetrize the matrix
         adjacency_matrix = (adjacency_matrix + adjacency_matrix.T) - (
-            adjacency_matrix * adjacency_matrix.T
+            adjacency_matrix.multiply(adjacency_matrix.T)
         )
 
         # =============  Reduced space
@@ -95,6 +95,9 @@ class UMAP:
 
         # find a, b for the student neighborhood probability formule
         a, b = self._find_ab(self.min_dist)
+
+        # Get all the pairs of connected vertex from the adjancency matrix to compute the loss on connected edges
+        rows, cols = adjacency_matrix.nonzero()
 
         # Optimize the position in reduced space
         for i in range(self.n_epochs):
@@ -105,8 +108,6 @@ class UMAP:
 
             # Compute the probabilities
             q = 1 / (1 + a * dist_reduced ** (2 * b))
-
-            print(q)
 
     def _binary_search_sigma(
         self,

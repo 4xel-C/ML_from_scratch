@@ -12,6 +12,8 @@ from typing import List, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
+from scipy.optimize import curve_fit
+from scipy.sparse import csr_matrix
 
 
 class UMAP:
@@ -39,6 +41,8 @@ class UMAP:
         knn_distances: NDArray
         rho: NDArray
 
+        n = len(X)
+
         # compute the distances using broadcasting
         distances: NDArray = np.sqrt(
             np.sum((X[np.newaxis, :, :] - X[:, np.newaxis, :]) ** 2, axis=2)
@@ -60,9 +64,49 @@ class UMAP:
         knn_dist_rho = knn_distances - rho[:, np.newaxis]
 
         # Compute the vector of sigma for each points using binary search
-        sigmas = np.apply_along_axis(knn_dist_rho)
+        target_entropy = np.log2(self.n_neighbors)
 
-        print(knn_dist_rho)
+        sigmas = np.apply_along_axis(
+            lambda row: self._binary_search_sigma(row, target_entropy, 0, 1000),
+            1,
+            knn_dist_rho,
+        )
+
+        # Compute the weights (similarities) of the graph with the sigmas computed
+        w: NDArray = np.exp(-(knn_dist_rho) / sigmas[:, np.newaxis])
+
+        # compute the sparse matrix
+        adjacency_matrix = csr_matrix(
+            (
+                w.ravel(),
+                ((np.repeat(np.arange(n), self.n_neighbors)), knn_indices.ravel()),
+            ),
+            shape=(n, n),
+        )
+
+        # Symmetrize the matrix
+        adjacency_matrix = (adjacency_matrix + adjacency_matrix.T) - (
+            adjacency_matrix * adjacency_matrix.T
+        )
+
+        # =============  Reduced space
+        # randomly generates points with small variance in the reduced space
+        Y = np.random.normal(0, scale=1e-4, size=(n, self.n_components))
+
+        # find a, b for the student neighborhood probability formule
+        a, b = self._find_ab(self.min_dist)
+
+        # Optimize the position in reduced space
+        for i in range(self.n_epochs):
+            # Compute the distance matrix
+            dist_reduced = np.sqrt(
+                np.sum((Y[np.newaxis, :, :] - Y[:, np.newaxis, :]) ** 2, axis=2)
+            )
+
+            # Compute the probabilities
+            q = 1 / (1 + a * dist_reduced ** (2 * b))
+
+            print(q)
 
     def _binary_search_sigma(
         self,
@@ -90,6 +134,9 @@ class UMAP:
         # compute the mid value of sigma
         mid_sigma = (right_sigma + left_sigma) / 2
 
+        if mid_sigma == 0:
+            return right_sigma
+
         if current_iteration == max_iterations:
             print("Max iteration reached ! The sigma search did not converge.")
             return mid_sigma
@@ -97,7 +144,7 @@ class UMAP:
         probabilities: NDArray = np.exp(-(distances_rho) / mid_sigma)
 
         # compute the entropy for sigma
-        H_mid = np.sum(-probabilities * np.log2(probabilities))
+        H_mid = np.sum(probabilities)
 
         # If we are inside the tolerance window: return the sigma
         if abs(H_mid - target_entropy) < tol:
@@ -127,15 +174,33 @@ class UMAP:
                 current_iteration=current_iteration + 1,
             )
 
+    def _find_ab(self, min_dist: float):
+        """Numerical fitting to find a and b parameter in the personnalized student formula from the min_dist hyperparameter.
+        Below min_dist, we want the points to distance 1, beyond min_dist, we want an exponential decrease in similarity.
+
+        Args:
+            min_dist (float): Min distance below which we normalize to 1
+        """
+        d_values = np.linspace(0, 3, 300)
+        target = np.where(d_values < min_dist, 1, np.exp(-(d_values - self.min_dist)))
+
+        def student_t_ab(x, a, b):
+            return 1 / (1 + a * x ** (b * 2))
+
+        params, covariance = curve_fit(student_t_ab, d_values, target)
+        print(covariance)
+
+        return params
+
 
 if __name__ == "__main__":
     engine = UMAP(
-        n_neighbors=10,
+        n_neighbors=2,
         n_components=2,
         learning_rate=0.01,
         n_epochs=100,
         n_negative_sample=20,
-        min_dist=10,
+        min_dist=0.1,
     )
 
     X = np.array(

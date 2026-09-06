@@ -11,9 +11,12 @@ How to compute UMAP:
 from typing import List, Tuple
 
 import numpy as np
+import umap
 from numpy.typing import NDArray
 from scipy.optimize import curve_fit
 from scipy.sparse import csr_matrix
+from sklearn.datasets import make_blobs
+from sklearn.preprocessing import StandardScaler
 
 
 class UMAP:
@@ -85,7 +88,7 @@ class UMAP:
         )
 
         # Symmetrize the matrix
-        adjacency_matrix = (adjacency_matrix + adjacency_matrix.T) - (
+        P = (adjacency_matrix + adjacency_matrix.T) - (
             adjacency_matrix.multiply(adjacency_matrix.T)
         )
 
@@ -100,14 +103,65 @@ class UMAP:
         rows, cols = adjacency_matrix.nonzero()
 
         # Optimize the position in reduced space
-        for i in range(self.n_epochs):
+        for epoch in range(self.n_epochs):
             # Compute the distance matrix
             dist_reduced = np.sqrt(
-                np.sum((Y[np.newaxis, :, :] - Y[:, np.newaxis, :]) ** 2, axis=2)
+                np.clip(
+                    np.sum((Y[np.newaxis, :, :] - Y[:, np.newaxis, :]) ** 2, axis=2),
+                    0,
+                    None,
+                )
             )
 
             # Compute the probabilities
-            q = 1 / (1 + a * dist_reduced ** (2 * b))
+            Q = 1 / (1 + a * dist_reduced ** (2 * b))
+
+            # initialize the gradient
+            gradients = np.zeros((n, self.n_components))
+
+            # Compute the gradient for each point
+            for i in range(n):
+                # Handle the attraction on the connected pairs
+                connected_to = cols[rows == i]
+                d_connected = dist_reduced[i, connected_to]
+                p_connected = (
+                    P.getrow(i)[:, connected_to].toarray().ravel()
+                )  # sparse matrix object, rebuild the row
+                q_connected = Q[i, connected_to]
+
+                grad = self._grad_calculation(
+                    a, b, d_connected, p_connected, q_connected, Y[i], Y[connected_to]
+                )
+
+                gradients[i] = grad
+
+                # negative sampling
+                not_connected_to = np.random.choice(
+                    np.setdiff1d(np.arange(n), connected_to), self.n_negative_sample
+                )
+                d_not_connected = dist_reduced[i, not_connected_to]
+                p_not_connected = np.zeros(
+                    self.n_negative_sample
+                )  # Non neighbors pairs -> no probability
+
+                q_not_connected = Q[i, not_connected_to]
+
+                grad_repulsion = self._grad_calculation(
+                    a,
+                    b,
+                    d_not_connected,
+                    p_not_connected,
+                    q_not_connected,
+                    Y[i],
+                    Y[not_connected_to],
+                )
+
+                gradients[i] += grad_repulsion
+
+            # update the gradients
+            Y -= self.learning_rate * gradients
+
+        return Y
 
     def _binary_search_sigma(
         self,
@@ -189,29 +243,88 @@ class UMAP:
             return 1 / (1 + a * x ** (b * 2))
 
         params, covariance = curve_fit(student_t_ab, d_values, target)
-        print(covariance)
 
         return params
 
+    def _grad_calculation(
+        self,
+        a: float,
+        b: float,
+        d: NDArray,
+        p: NDArray,
+        q: NDArray,
+        yi: NDArray,
+        yj: NDArray,
+    ) -> NDArray:
+        """Compute the gradient using broadcasting on multiple pairs at once. m being the number of dimensions in
+        the reduced space.
+
+        Returns:
+            An array containing the gradient of the components in the reduced space.
+        """
+
+        d = np.clip(d, 1e-10, None)
+
+        # Shape [k]
+        num_first_factor: NDArray = 2 * a * b * d ** (2 * b - 1)
+
+        # shape [k]
+        num_second_factor: NDArray = (p * (1 - q)) - (q * (1 - p))
+
+        # shape [k, m]
+        third_factor: NDArray = (yi[np.newaxis, :] - yj) / d[:, np.newaxis]
+
+        # shape [k]
+        denominator: NDArray = (
+            np.clip(q * (1 - q), 1e-10, None) * (1 + a * d ** (2 * b)) ** 2
+        )
+
+        # shape k
+        grad = num_first_factor * num_second_factor / denominator
+
+        # shape [k, m]
+        grad = grad[:, np.newaxis] * third_factor
+        return np.sum(grad, axis=0)
+
 
 if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+    from sklearn.datasets import make_blobs
+
+    X, y = make_blobs(
+        n_samples=100,
+        centers=[[-5, -5], [0, 5], [5, -5]],
+        cluster_std=2.1,
+        random_state=42,
+    )
+    X = StandardScaler().fit_transform(X)
+
+    # Notre implémentation
     engine = UMAP(
-        n_neighbors=2,
+        n_neighbors=15,
         n_components=2,
-        learning_rate=0.01,
+        learning_rate=0.001,
         n_epochs=100,
-        n_negative_sample=20,
-        min_dist=0.1,
+        n_negative_sample=30,
+        min_dist=0.01,
+    )
+    Y_ours = engine.fit_transform(X)
+
+    ref = umap.UMAP(
+        n_neighbors=15,
+        n_components=2,
+        min_dist=0.01,
+        learning_rate=0.001,
+        n_epochs=100,
+        n_negative_sample=30,  # type: ignore
     )
 
-    X = np.array(
-        [
-            [12, 5, 8, 3, 17],
-            [4, 21, 6, 14, 9],
-            [18, 2, 15, 7, 11],
-            [5, 13, 20, 1, 16],
-            [10, 8, 3, 19, 22],
-        ]
-    )
+    Y_ref = ref.fit_transform(X)
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+    axes[0].scatter(Y_ours[:, 0], Y_ours[:, 1], c=y, cmap="tab10", s=10)
+    axes[0].set_title("My UMAP Implementation")
+    axes[1].scatter(Y_ref[:, 0], Y_ref[:, 1], c=y, cmap="tab10", s=10)  # type: ignore
+    axes[1].set_title("UMAP Reference (umap-learn)")
 
-    engine.fit_transform(X)
+    plt.tight_layout()
+    plt.show()

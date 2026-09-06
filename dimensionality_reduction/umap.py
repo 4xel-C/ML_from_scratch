@@ -8,8 +8,6 @@ How to compute UMAP:
 3) Optimize using the binary cross-entropy to rebuild the graph
 """
 
-from typing import List, Tuple
-
 import numpy as np
 import umap
 from numpy.typing import NDArray
@@ -291,9 +289,9 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from sklearn.datasets import make_blobs
 
-    X, y = make_blobs(
+    X, y = make_blobs(  # type: ignore
         n_samples=100,
-        centers=[[-5, -5], [0, 5], [5, -5]],
+        centers=[[-5, -5], [0, 5], [5, -5]],  # type: ignore
         cluster_std=2.1,
         random_state=42,
     )
